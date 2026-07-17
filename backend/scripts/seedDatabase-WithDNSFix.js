@@ -136,6 +136,13 @@ async function seedDatabase() {
       for (const prodData of products) {
         const sku = `DEERFIT-${catKey.toUpperCase()}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+        // Select image based on category
+        let categoryImage = PLACEHOLDER_IMAGES.product;
+        if (catKey === 'men') categoryImage = PLACEHOLDER_IMAGES.men;
+        else if (catKey === 'women') categoryImage = PLACEHOLDER_IMAGES.women;
+        else if (catKey === 'kids') categoryImage = PLACEHOLDER_IMAGES.kids;
+        else if (catKey === 'accessories') categoryImage = PLACEHOLDER_IMAGES.accessories;
+
         const product = await Product.create({
           name: prodData.name,
           description: prodData.description,
@@ -149,6 +156,7 @@ async function seedDatabase() {
           colors: ['Black', 'White', 'Blue', 'Red', 'Green'],
           status: 'active',
           isFeatured: Math.random() > 0.7,
+          image: categoryImage,
         });
 
         await ProductImage.create({

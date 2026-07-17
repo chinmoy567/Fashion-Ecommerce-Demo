@@ -15,6 +15,7 @@ const productSchema = new mongoose.Schema(
     weight: { type: Number },
     status: { type: String, enum: ['active', 'inactive', 'discontinued'], default: 'active' },
     isFeatured: { type: Boolean, default: false },
+    image: { type: String }, // SVG data URL or image URL
     images: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ProductImage' }],
     variants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ProductVariant' }],
     sizes: [{ type: String }],
