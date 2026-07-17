@@ -5,6 +5,7 @@ import { getProductById } from '../api/product'
 import { addToCart } from '../api/cart'
 import { setSelectedProduct } from '../store/slices/productSlice'
 import { addItem } from '../store/slices/cartSlice'
+import ReviewSection from '../components/ReviewSection'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -100,6 +101,8 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      <ReviewSection />
     </div>
   )
 }

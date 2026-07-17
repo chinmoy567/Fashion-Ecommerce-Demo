@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { createOrder } from '../api/order'
+import CouponSection from '../components/CouponSection'
 
 export default function Checkout() {
   const navigate = useNavigate()
@@ -13,10 +14,28 @@ export default function Checkout() {
     shippingMethodId: 'standard',
   })
   const [loading, setLoading] = useState(false)
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
+  const [discountAmount, setDiscountAmount] = useState(0)
 
   if (!isAuthenticated) {
     navigate('/login')
     return null
+  }
+
+  const handleCouponApply = (couponData) => {
+    if (couponData) {
+      setAppliedCoupon(couponData)
+      setDiscountAmount(couponData.discountAmount)
+      setFormData({
+        ...formData,
+        couponId: couponData.couponId,
+      })
+    } else {
+      setAppliedCoupon(null)
+      setDiscountAmount(0)
+      const { couponId, ...rest } = formData
+      setFormData(rest)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -127,18 +146,27 @@ export default function Checkout() {
               </div>
             ))}
           </div>
+
+          <CouponSection subtotal={total} onCouponApply={handleCouponApply} />
+
           <div className="border-t pt-4 space-y-2">
             <div className="flex justify-between">
               <span>Subtotal:</span>
               <span>৳{total}</span>
             </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Discount:</span>
+                <span>-৳{discountAmount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>Shipping:</span>
               <span>৳60</span>
             </div>
             <div className="flex justify-between font-bold text-lg pt-2 border-t">
               <span>Total:</span>
-              <span>৳{total + 60}</span>
+              <span>৳{(total - discountAmount + 60).toFixed(2)}</span>
             </div>
           </div>
         </div>

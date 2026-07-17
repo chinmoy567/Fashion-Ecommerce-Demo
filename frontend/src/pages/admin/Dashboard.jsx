@@ -60,6 +60,18 @@ export default function AdminDashboard() {
           <h3 className="font-bold mb-2">View Customers</h3>
           <p className="text-gray-600">View customer information</p>
         </a>
+        <a href="/admin/reviews" className="bg-white p-6 rounded shadow hover:shadow-lg cursor-pointer">
+          <h3 className="font-bold mb-2">Manage Reviews</h3>
+          <p className="text-gray-600">Approve or reject customer reviews</p>
+        </a>
+        <a href="/admin/coupons" className="bg-white p-6 rounded shadow hover:shadow-lg cursor-pointer">
+          <h3 className="font-bold mb-2">Manage Coupons</h3>
+          <p className="text-gray-600">Create and manage discount coupons</p>
+        </a>
+        <a href="/admin/inventory" className="bg-white p-6 rounded shadow hover:shadow-lg cursor-pointer">
+          <h3 className="font-bold mb-2">Manage Inventory</h3>
+          <p className="text-gray-600">Track and adjust product stock</p>
+        </a>
       </div>
     </div>
   )

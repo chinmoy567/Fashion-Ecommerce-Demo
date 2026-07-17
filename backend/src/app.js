@@ -13,6 +13,10 @@ import cartRoutes from './routes/cart.js';
 import orderRoutes from './routes/order.js';
 import customerRoutes from './routes/customer.js';
 import adminRoutes from './routes/admin.js';
+import reviewRoutes from './routes/review.js';
+import couponRoutes from './routes/coupon.js';
+import inventoryRoutes from './routes/inventory.js';
+import notificationRoutes from './routes/notification.js';
 
 const app = express();
 
@@ -35,6 +39,10 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
