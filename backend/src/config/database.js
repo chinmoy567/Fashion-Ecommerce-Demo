@@ -26,6 +26,14 @@ const createIndexes = async () => {
   try {
     const db = mongoose.connection.db;
 
+    // Drop problematic indexes from old schema versions
+    try {
+      await db.collection('orders').dropIndex('orderId_1');
+      console.log('✓ Dropped old orderId_1 index from orders');
+    } catch (e) {
+      // Index might not exist, that's okay
+    }
+
     // Customer indexes
     await db.collection('customers').createIndex({ email: 1 }, { unique: true });
     await db.collection('customers').createIndex({ isActive: 1, createdAt: -1 });
@@ -38,9 +46,9 @@ const createIndexes = async () => {
     await db.collection('products').createIndex({ name: 'text', description: 'text' });
 
     // Order indexes
-    await db.collection('orders').createIndex({ orderId: 1 }, { unique: true });
-    await db.collection('orders').createIndex({ customerId: 1, orderPlacedDate: -1 });
-    await db.collection('orders').createIndex({ status: 1, orderPlacedDate: -1 });
+    // Note: orderId index removed - use orderNumber which is already unique in the schema
+    await db.collection('orders').createIndex({ customerId: 1, createdAt: -1 });
+    await db.collection('orders').createIndex({ status: 1, createdAt: -1 });
 
     // Cart indexes
     await db.collection('carts').createIndex({ customerId: 1 });
