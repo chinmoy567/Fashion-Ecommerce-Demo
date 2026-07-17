@@ -12,6 +12,7 @@
     "seed:direct": "node scripts/seedDatabase-DirectConnection.js",
     "seed:dns": "node scripts/seedDatabase-WithDNSFix.js",
     "seed:images": "node scripts/seedDatabase-RealImages.js",
+    "seed:products": "node src/seeds/productSeed.js",
     "lint": "eslint src --ext .js",
     "lint:fix": "eslint src --ext .js --fix"
   },

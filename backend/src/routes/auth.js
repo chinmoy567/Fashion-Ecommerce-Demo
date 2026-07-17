@@ -1,5 +1,6 @@
 import express from 'express';
 import Customer from '../models/Customer.js';
+import AdminUser from '../models/AdminUser.js';
 import { generateOTP, OTP_VALIDITY } from '../utils/otp.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
 import { verifyToken } from '../middlewares/auth.js';
@@ -121,6 +122,41 @@ router.post('/refresh', verifyToken, async (req, res) => {
 // POST /auth/logout - Logout (optional, token invalidation handled client-side)
 router.post('/logout', verifyToken, (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// POST /auth/staff-login - Staff (admin/manager) login
+router.post('/staff-login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'Email and password required' });
+  }
+
+  const adminUser = await AdminUser.findOne({ email });
+  if (!adminUser) {
+    return res.status(401).json({ success: false, message: 'Invalid email or password' });
+  }
+
+  if (!adminUser.isActive) {
+    return res.status(403).json({ success: false, message: 'Account is inactive' });
+  }
+
+  const isPasswordValid = await adminUser.comparePassword(password);
+  if (!isPasswordValid) {
+    return res.status(401).json({ success: false, message: 'Invalid email or password' });
+  }
+
+  adminUser.lastLogin = new Date();
+  await adminUser.save();
+
+  const token = generateToken(adminUser._id, adminUser.role);
+  const refreshToken = generateRefreshToken(adminUser._id);
+
+  res.json({
+    success: true,
+    message: 'Staff login successful',
+    data: { token, refreshToken, adminUser: adminUser.toJSON() },
+  });
 });
 
 export default router;

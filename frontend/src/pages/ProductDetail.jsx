@@ -65,20 +65,21 @@ export default function ProductDetail() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Image */}
         <div className="sticky top-4 h-fit">
-          <div className="bg-gray-100 rounded-lg overflow-hidden shadow-lg">
+          <div className="bg-gray-100 rounded-lg overflow-hidden shadow-lg flex items-center justify-center min-h-96">
             {selectedProduct.image ? (
               <img
                 src={selectedProduct.image}
                 alt={selectedProduct.name}
-                className="w-full h-auto object-cover"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   e.target.style.display = 'none'
-                  e.target.parentElement.innerHTML = '<div class="flex items-center justify-center h-96 text-gray-400"><span>Image not available</span></div>'
+                  e.target.parentElement.innerHTML = '<div class="flex items-center justify-center w-full h-96 bg-gray-200 text-gray-400"><span>📸 Image not available</span></div>'
                 }}
+                loading="lazy"
               />
             ) : (
-              <div className="flex items-center justify-center h-96 bg-gray-200 text-gray-400">
-                <span>No Image Available</span>
+              <div className="flex items-center justify-center w-full h-96 bg-gray-200 text-gray-400">
+                <span>📸 No Image Available</span>
               </div>
             )}
           </div>
@@ -102,6 +103,34 @@ export default function ProductDetail() {
           </div>
 
           <p className="text-gray-700 mb-8 leading-relaxed">{selectedProduct.description}</p>
+
+          {/* Colors & Sizes */}
+          <div className="mb-8 pb-8 border-b space-y-4">
+            {selectedProduct.colors && selectedProduct.colors.length > 0 && (
+              <div>
+                <label className="block text-sm font-semibold mb-2">Available Colors</label>
+                <div className="flex gap-2 flex-wrap">
+                  {selectedProduct.colors.map(color => (
+                    <span key={color} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm capitalize">
+                      {color}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
+              <div>
+                <label className="block text-sm font-semibold mb-2">Available Sizes</label>
+                <div className="flex gap-2 flex-wrap">
+                  {selectedProduct.sizes.map(size => (
+                    <span key={size} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm uppercase font-semibold">
+                      {size}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="mb-8 pb-8 border-b">
             <label className="block text-sm font-semibold mb-2">Quantity</label>

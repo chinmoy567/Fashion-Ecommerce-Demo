@@ -17,8 +17,10 @@ import OrderTracking from './pages/OrderTracking'
 import Profile from './pages/Profile'
 import Wishlist from './pages/Wishlist'
 
-// Admin Pages
+// Staff Pages
+import StaffLogin from './pages/StaffLogin'
 import AdminDashboard from './pages/admin/Dashboard'
+import ManagerDashboard from './pages/admin/ManagerDashboard'
 import AdminAnalytics from './pages/admin/Analytics'
 import AdminOrders from './pages/admin/Orders'
 import AdminProducts from './pages/admin/Products'
@@ -37,6 +39,7 @@ const router = createBrowserRouter([
       { path: 'products/:id', element: <ProductDetail /> },
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
+      { path: 'staff-login', element: <StaffLogin /> },
       { path: 'cart', element: <Cart /> },
       { path: 'checkout', element: <Checkout /> },
       { path: 'my-orders', element: <MyOrders /> },
@@ -51,6 +54,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <AdminDashboard /> },
       { path: 'dashboard', element: <AdminDashboard /> },
+      { path: 'manager-dashboard', element: <ManagerDashboard /> },
       { path: 'analytics', element: <AdminAnalytics /> },
       { path: 'orders', element: <AdminOrders /> },
       { path: 'products', element: <AdminProducts /> },

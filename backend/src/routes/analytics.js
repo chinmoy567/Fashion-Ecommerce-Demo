@@ -184,4 +184,23 @@ router.get('/categories', verifyToken, verifyAdmin, async (req, res) => {
   }
 })
 
+// Get order status breakdown for pie/donut chart
+router.get('/orders/status-breakdown', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const breakdown = await analyticsService.getOrderStatusBreakdown()
+
+    res.json({
+      success: true,
+      message: 'Order status breakdown retrieved',
+      data: breakdown,
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve order status breakdown',
+      error: error.message,
+    })
+  }
+})
+
 export default router

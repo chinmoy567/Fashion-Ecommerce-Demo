@@ -15,6 +15,54 @@ router.get('/test/connection', async (req, res) => {
   }
 });
 
+// GET /products/filters/metadata - Get available filter options
+router.get('/filters/metadata', async (req, res) => {
+  try {
+    const query = { status: 'active' };
+
+    // Get all unique colors
+    const colors = await Product.find(query).distinct('colors');
+
+    // Get all unique sizes
+    const sizes = await Product.find(query).distinct('sizes');
+
+    // Get price range
+    const priceData = await Product.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+        },
+      },
+    ]);
+
+    const minPrice = priceData[0]?.minPrice || 0;
+    const maxPrice = priceData[0]?.maxPrice || 10000;
+
+    res.json({
+      success: true,
+      message: 'Filter metadata retrieved',
+      data: {
+        colors: colors.filter(Boolean),
+        sizes: sizes.filter(Boolean),
+        priceRange: { min: minPrice, max: maxPrice },
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching filter metadata:', error);
+    res.json({
+      success: true,
+      data: {
+        colors: [],
+        sizes: [],
+        priceRange: { min: 0, max: 10000 },
+      },
+    });
+  }
+});
+
 // Demo products with images for when database is unavailable
 const DEMO_PRODUCTS = [
   { _id: '1', name: 'DeerFit Classic T-Shirt', brand: 'DeerFit', price: 1200, stock: 50, image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"%3E%3Cdefs%3E%3ClinearGradient id="grad1" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%234a5568;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%232d3748;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23grad1)" width="400" height="400"/%3E%3Ctext x="200" y="200" font-size="60" fill="white" text-anchor="middle"%3E👕%3C/text%3E%3C/svg%3E' },
@@ -34,18 +82,73 @@ const DEMO_PRODUCTS = [
 // GET /products - Get all products with pagination and filters
 router.get('/', async (req, res) => {
   try {
-    const { page = 1, limit = 12, category, search, featured } = req.query;
+    const {
+      page = 1,
+      limit = 12,
+      category,
+      search,
+      featured,
+      minPrice,
+      maxPrice,
+      color,
+      size,
+      sort = 'newest',
+      inStock
+    } = req.query;
 
     let query = { status: 'active' };
+
     if (category) query.categoryId = category;
     if (search) query.$text = { $search: search };
     if (featured === 'true') query.isFeatured = true;
+
+    // Price filtering
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = parseFloat(minPrice);
+      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+    }
+
+    // Color filtering
+    if (color) {
+      query.colors = { $in: [color] };
+    }
+
+    // Size filtering
+    if (size) {
+      query.sizes = { $in: [size] };
+    }
+
+    // Stock filtering
+    if (inStock === 'true') {
+      query.stock = { $gt: 0 };
+    }
+
+    // Sorting
+    let sortObj = { createdAt: -1 };
+    switch(sort) {
+      case 'price-low-high':
+        sortObj = { price: 1 };
+        break;
+      case 'price-high-low':
+        sortObj = { price: -1 };
+        break;
+      case 'best-selling':
+        sortObj = { saleCount: -1 };
+        break;
+      case 'top-rated':
+        sortObj = { averageRating: -1 };
+        break;
+      case 'newest':
+      default:
+        sortObj = { createdAt: -1 };
+    }
 
     const skip = (page - 1) * limit;
     const products = await Product.find(query)
       .skip(skip)
       .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
+      .sort(sortObj);
 
     const total = await Product.countDocuments(query);
 

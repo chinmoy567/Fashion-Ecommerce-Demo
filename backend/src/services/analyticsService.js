@@ -13,16 +13,22 @@ const getSalesMetrics = async (startDate, endDate) => {
     const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0)
     const totalOrders = orders.length
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
-    const completedOrders = orders.filter((o) => o.status === 'completed').length
     const pendingOrders = orders.filter((o) => o.status === 'pending').length
+    const confirmedOrders = orders.filter((o) => o.status === 'confirmed').length
+    const shippedOrders = orders.filter((o) => o.status === 'shipped').length
+    const deliveredOrders = orders.filter((o) => o.status === 'delivered').length
+    const completedOrders = orders.filter((o) => o.status === 'completed').length
     const cancelledOrders = orders.filter((o) => o.status === 'cancelled').length
 
     return {
       totalRevenue,
       totalOrders,
       averageOrderValue,
-      completedOrders,
       pendingOrders,
+      confirmedOrders,
+      shippedOrders,
+      deliveredOrders,
+      completedOrders,
       cancelledOrders,
       conversionRate: totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0,
     }
@@ -206,25 +212,50 @@ const getDashboardMetrics = async () => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const startOfYear = new Date(now.getFullYear(), 0, 1)
 
-    const [monthlySales, yearlySales, productMetrics, reviewMetrics, dailyTrend] =
+    const [monthlySales, yearlySales, customerMetrics, productMetrics, reviewMetrics, dailyTrend, monthlyTrend] =
       await Promise.all([
         getSalesMetrics(startOfMonth, now),
         getSalesMetrics(startOfYear, now),
+        getCustomerMetrics(startOfMonth, now),
         getProductMetrics(),
         getReviewMetrics(),
         getDailySalesTrend(7),
+        getMonthlySalesTrend(6),
       ])
 
     return {
       monthly: monthlySales,
       yearly: yearlySales,
+      customers: customerMetrics,
       products: productMetrics,
       reviews: reviewMetrics,
       dailyTrend,
+      monthlyTrend,
       lastUpdated: now,
     }
   } catch (error) {
     console.error('Error getting dashboard metrics:', error)
+    throw error
+  }
+}
+
+// Get order status breakdown for pie/donut chart
+const getOrderStatusBreakdown = async () => {
+  try {
+    const statusCounts = await Order.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          revenue: { $sum: '$total' },
+        },
+      },
+      { $sort: { count: -1 } },
+    ])
+
+    return statusCounts
+  } catch (error) {
+    console.error('Error calculating order status breakdown:', error)
     throw error
   }
 }
@@ -278,4 +309,5 @@ export default {
   getMonthlySalesTrend,
   getDashboardMetrics,
   getCategoryPerformance,
+  getOrderStatusBreakdown,
 }

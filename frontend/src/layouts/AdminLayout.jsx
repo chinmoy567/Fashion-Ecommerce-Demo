@@ -7,8 +7,8 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const { isAuthenticated, user } = useSelector(state => state.auth)
 
-  // Redirect if not admin
-  if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'super_admin')) {
+  // Redirect if not admin/manager
+  if (!isAuthenticated || (user?.role !== 'manager' && user?.role !== 'super_admin')) {
     navigate('/login')
     return null
   }
@@ -23,59 +23,74 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <div className="w-64 bg-gray-900 text-white shadow-lg fixed h-full">
         <div className="p-6 border-b border-gray-700">
-          <h1 className="text-2xl font-bold">Admin Panel</h1>
-          <p className="text-sm text-gray-400 mt-2">Welcome, {user?.name}</p>
+          <h1 className="text-2xl font-bold">
+            {user?.role === 'super_admin' ? '👑 Admin Panel' : '📊 Manager Panel'}
+          </h1>
+          <p className="text-sm text-gray-400 mt-2">
+            Welcome, {user?.fullName || user?.name}
+          </p>
         </div>
 
         <nav className="mt-6 space-y-2 px-4">
           <Link
-            to="/admin/dashboard"
-            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
+            to={user?.role === 'super_admin' ? '/admin/dashboard' : '/admin/manager-dashboard'}
+            className="block px-4 py-2 rounded hover:bg-gray-700 transition font-semibold"
           >
-            Dashboard
+            📊 Dashboard
           </Link>
-          <Link
-            to="/admin/analytics"
-            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
-          >
-            Analytics
-          </Link>
+
           <Link
             to="/admin/orders"
             className="block px-4 py-2 rounded hover:bg-gray-700 transition"
           >
-            Orders
+            📋 Orders
           </Link>
-          <Link
-            to="/admin/products"
-            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
-          >
-            Products
-          </Link>
+
+          {user?.role === 'super_admin' && (
+            <>
+              <Link
+                to="/admin/analytics"
+                className="block px-4 py-2 rounded hover:bg-gray-700 transition"
+              >
+                📈 Analytics
+              </Link>
+              <Link
+                to="/admin/products"
+                className="block px-4 py-2 rounded hover:bg-gray-700 transition"
+              >
+                📦 Products
+              </Link>
+              <Link
+                to="/admin/customers"
+                className="block px-4 py-2 rounded hover:bg-gray-700 transition"
+              >
+                👥 Customers
+              </Link>
+            </>
+          )}
+
           <Link
             to="/admin/inventory"
             className="block px-4 py-2 rounded hover:bg-gray-700 transition"
           >
-            Inventory
+            📊 Inventory
           </Link>
-          <Link
-            to="/admin/customers"
-            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
-          >
-            Customers
-          </Link>
+
           <Link
             to="/admin/reviews"
             className="block px-4 py-2 rounded hover:bg-gray-700 transition"
           >
-            Reviews
+            ⭐ Reviews
           </Link>
-          <Link
-            to="/admin/coupons"
-            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
-          >
-            Coupons
-          </Link>
+
+          {user?.role === 'super_admin' && (
+            <Link
+              to="/admin/coupons"
+              className="block px-4 py-2 rounded hover:bg-gray-700 transition"
+            >
+              🎟️ Coupons
+            </Link>
+          )}
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">

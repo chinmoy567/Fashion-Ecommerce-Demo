@@ -17,7 +17,7 @@ export default function Analytics() {
   const [months, setMonths] = useState(6)
 
   useEffect(() => {
-    if (user?.role !== 'admin' && user?.role !== 'super_admin') {
+    if (user?.role !== 'manager' && user?.role !== 'super_admin') {
       alert('Access denied')
       return
     }
@@ -25,7 +25,7 @@ export default function Analytics() {
   }, [])
 
   useEffect(() => {
-    if (user?.role === 'admin' || user?.role === 'super_admin') {
+    if (user?.role === 'manager' || user?.role === 'super_admin') {
       fetchTrends()
     }
   }, [days, months])
