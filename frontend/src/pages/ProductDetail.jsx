@@ -55,49 +55,82 @@ export default function ProductDetail() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <button
+        onClick={() => window.history.back()}
+        className="mb-6 text-blue-600 hover:text-blue-800 font-semibold"
+      >
+        ← Back to Shop
+      </button>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Image */}
-        <div className="bg-gray-200 h-96 rounded flex items-center justify-center">
-          <span className="text-gray-400">No Image</span>
+        <div className="sticky top-4 h-fit">
+          <div className="bg-gray-100 rounded-lg overflow-hidden shadow-lg">
+            {selectedProduct.image ? (
+              <img
+                src={selectedProduct.image}
+                alt={selectedProduct.name}
+                className="w-full h-auto object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none'
+                  e.target.parentElement.innerHTML = '<div class="flex items-center justify-center h-96 text-gray-400"><span>Image not available</span></div>'
+                }}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-96 bg-gray-200 text-gray-400">
+                <span>No Image Available</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Details */}
         <div>
-          <h1 className="text-3xl font-bold mb-2">{selectedProduct.name}</h1>
-          <p className="text-gray-600 mb-4">{selectedProduct.brand}</p>
+          <h1 className="text-4xl font-bold mb-2">{selectedProduct.name}</h1>
+          <p className="text-xl text-gray-600 mb-4">{selectedProduct.brand || 'DeerFit'}</p>
 
-          <div className="flex gap-4 mb-4">
-            <span className="text-2xl font-bold">৳{selectedProduct.price}</span>
+          <div className="flex items-center gap-4 mb-6 pb-6 border-b">
+            <span className="text-4xl font-bold text-blue-600">৳{selectedProduct.price}</span>
             {selectedProduct.discountPrice && (
-              <span className="text-red-600 line-through">৳{selectedProduct.discountPrice}</span>
+              <span className="text-lg text-red-600 line-through">৳{selectedProduct.discountPrice}</span>
+            )}
+            {selectedProduct.stock > 0 ? (
+              <span className="text-green-600 font-semibold text-lg">In Stock</span>
+            ) : (
+              <span className="text-red-600 font-semibold text-lg">Out of Stock</span>
             )}
           </div>
 
-          <p className="text-gray-700 mb-6">{selectedProduct.description}</p>
+          <p className="text-gray-700 mb-8 leading-relaxed">{selectedProduct.description}</p>
 
-          <div className="flex gap-4 mb-6">
-            <input
-              type="number"
-              min="1"
-              max={selectedProduct.stock}
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value))}
-              className="border px-4 py-2 w-20"
-            />
-            <button
-              onClick={handleAddToCart}
-              disabled={selectedProduct.stock === 0}
-              className="flex-1 bg-blue-600 text-white py-3 rounded hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              Add to Cart
-            </button>
+          <div className="mb-8 pb-8 border-b">
+            <label className="block text-sm font-semibold mb-2">Quantity</label>
+            <div className="flex gap-4">
+              <input
+                type="number"
+                min="1"
+                max={selectedProduct.stock}
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                className="border border-gray-300 px-4 py-2 w-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={handleAddToCart}
+                disabled={selectedProduct.stock === 0}
+                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition"
+              >
+                Add to Cart
+              </button>
+            </div>
           </div>
 
-          <div className="border-t pt-4">
-            <p className="mb-2"><strong>Stock:</strong> {selectedProduct.stock}</p>
-            <p className="mb-2"><strong>SKU:</strong> {selectedProduct.sku}</p>
-            <p className="mb-2"><strong>Category:</strong> {selectedProduct.category}</p>
-            {selectedProduct.material && <p><strong>Material:</strong> {selectedProduct.material}</p>}
+          <div className="space-y-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="mb-2"><strong className="text-gray-700">Available Stock:</strong> <span className="text-green-600 font-semibold">{selectedProduct.stock}</span></p>
+              <p className="mb-2"><strong className="text-gray-700">SKU:</strong> <span className="text-gray-600">{selectedProduct.sku}</span></p>
+              <p className="mb-2"><strong className="text-gray-700">Material:</strong> <span className="text-gray-600">{selectedProduct.material || 'N/A'}</span></p>
+              <p><strong className="text-gray-700">Brand:</strong> <span className="text-gray-600">{selectedProduct.brand || 'DeerFit'}</span></p>
+            </div>
           </div>
         </div>
       </div>
