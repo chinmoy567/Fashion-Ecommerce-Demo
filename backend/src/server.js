@@ -1,10 +1,15 @@
 import dotenv from 'dotenv';
+import dns from 'dns';
 import app from './app.js';
 import { connectDB } from './config/database.js';
 import { validateEmailConfig, testEmailConnection } from './config/email.js';
 import { validateCloudinaryConfig, testCloudinaryConnection } from './config/cloudinary.js';
 
 dotenv.config();
+
+// Apply DNS override for MongoDB Atlas connection
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+console.log('✅ DNS Override: Using Google Public DNS (8.8.8.8, 8.8.4.4)\n');
 
 const PORT = process.env.PORT || 5000;
 
