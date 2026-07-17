@@ -73,17 +73,21 @@ router.get('/', async (req, res) => {
 
 // GET /products/:id - Get product details
 router.get('/:id', async (req, res) => {
-  const product = await Product.findById(req.params.id)
-    .populate('categoryId brandId images variants tags');
+  try {
+    const product = await Product.findById(req.params.id);
 
-  if (!product) {
-    return res.status(404).json({ success: false, message: 'Product not found' });
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    product.viewCount += 1;
+    await product.save();
+
+    res.json({ success: true, message: 'Product retrieved', data: product });
+  } catch (error) {
+    console.error('Product detail fetch error:', error.message);
+    res.status(500).json({ success: false, message: 'Error fetching product', error: error.message });
   }
-
-  product.viewCount += 1;
-  await product.save();
-
-  res.json({ success: true, message: 'Product retrieved', data: product });
 });
 
 // POST /products - Create product (admin only)
