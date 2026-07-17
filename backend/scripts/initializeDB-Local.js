@@ -1,51 +1,54 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import AdminUser from '../src/models/AdminUser.js';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import bcryptjs from 'bcryptjs';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const initializeDatabase = async () => {
   try {
-    console.log('\n🔄 Initializing Database...\n');
-
-    let connected = false;
+    console.log('\n🔄 Initializing Database (Local Fallback Mode)...\n');
 
     // Try to connect to database
+    let connected = false;
     try {
       await mongoose.connect(process.env.MONGODB_URI, {
         serverSelectionTimeoutMS: 5000,
       });
       console.log('✅ Connected to MongoDB');
       connected = true;
-    } catch (error) {
+
+      // Create indexes if connected
+      await createIndexes();
+      await createAdminUser();
+    } catch (dbError) {
       console.warn('⚠️  Cannot connect to MongoDB Atlas');
-      console.log(`   Reason: ${error.message}\n`);
-      console.log('📋 Attempting offline setup...\n');
+      console.log(`   Reason: ${dbError.message}`);
+      console.log('\n📋 Fallback: Creating offline setup...\n');
 
-      // Show diagnostic info
-      showDiagnostics();
-
-      console.log('\n⏭️  Server can still run without database.');
-      console.log('   Fix the connection and run: npm run setup\n');
-      process.exit(0);
+      // Create offline setup
+      await createOfflineSetup();
     }
 
-    if (connected) {
-      console.log('✅ Connected to MongoDB');
+    console.log('\n✅ Setup preparation complete\n');
 
-      // Create indexes
-      await createIndexes();
-
-      // Create default admin user
-      await createAdminUser();
-
-      console.log('\n✅ Database initialization complete\n');
-      console.log('✅ Database ready for development\n');
+    if (!connected) {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('⚠️  DATABASE CONNECTION ISSUE');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('\nCould not connect to MongoDB Atlas');
+      console.log('\nSolutions:');
+      console.log('1. Check your internet connection');
+      console.log('2. Whitelist your IP in MongoDB Atlas:');
+      console.log('   - Go to: https://cloud.mongodb.com/');
+      console.log('   - Navigate to Security > Network Access');
+      console.log('   - Add your current IP address');
+      console.log('3. Verify connection string in .env');
+      console.log('4. Try again once network connection is available');
+      console.log('\n✅ Good news: You can still start the backend server!');
+      console.log('   Run: npm start');
+      console.log('   The API will work, but database features won\'t until connection is restored.');
+      console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     }
 
     process.exit(0);
@@ -53,35 +56,6 @@ const initializeDatabase = async () => {
     console.error('❌ Setup error:', error.message);
     process.exit(1);
   }
-};
-
-// Show diagnostic information
-const showDiagnostics = () => {
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('📋 MONGODB CONNECTION DIAGNOSTIC');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('\n✅ What\'s configured:');
-  console.log('   • Email Service: Ready (Gmail SMTP)');
-  console.log('   • Cloudinary: Ready (File uploads)');
-  console.log('   • Admin Account: Ready (chinmoy6667@gmail.com)');
-  console.log('   • Database URI: Configured');
-  console.log('\n❌ What\'s not working:');
-  console.log('   • MongoDB Connection: Failed');
-  console.log('\n🔧 To fix this:');
-  console.log('   1. Go to: https://cloud.mongodb.com/');
-  console.log('   2. Sign in with your MongoDB Atlas account');
-  console.log('   3. Click on "Security" in the sidebar');
-  console.log('   4. Click "Network Access"');
-  console.log('   5. Click "Add IP Address"');
-  console.log('   6. Add your current IP or allow from anywhere');
-  console.log('   7. Click "Confirm"');
-  console.log('   8. Return here and run: npm run setup');
-  console.log('\n💡 Good news:');
-  console.log('   • You can still start the server with: npm start');
-  console.log('   • API health check will work');
-  console.log('   • Email and file services ready');
-  console.log('   • Database features wait for connection');
-  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 };
 
 // Create indexes for optimal performance
@@ -146,7 +120,7 @@ const createAdminUser = async () => {
       fullName: 'System Administrator',
       email: adminEmail,
       phone: '+8801700000000',
-      password: 'Admin@123456', // Default password - should be changed
+      password: 'Admin@123456',
       role: 'super_admin',
       isActive: true,
     });
@@ -161,6 +135,45 @@ const createAdminUser = async () => {
     } else {
       console.warn(`⚠️  Warning creating admin user: ${error.message}`);
     }
+  }
+};
+
+// Create offline setup file
+const createOfflineSetup = async () => {
+  try {
+    const fs = await import('fs').then(m => m.default);
+    const path = await import('path').then(m => m.default);
+
+    const setupInfo = {
+      timestamp: new Date().toISOString(),
+      admin: {
+        email: process.env.ADMIN_EMAIL || 'chinmoy6667@gmail.com',
+        password: 'Admin@123456',
+        note: 'Change this password immediately after first login'
+      },
+      database: {
+        uri: process.env.MONGODB_URI,
+        status: 'Connection pending',
+        action: 'Whitelist your IP in MongoDB Atlas and try again'
+      },
+      services: {
+        email: 'Ready (Gmail SMTP configured)',
+        cloudinary: 'Ready (API keys configured)',
+        database: 'Waiting for connection'
+      },
+      instructions: [
+        '1. Whitelist your IP in MongoDB Atlas',
+        '2. Run: npm run setup',
+        '3. Run: npm start',
+        '4. Test: curl http://localhost:5001/api/health'
+      ]
+    };
+
+    const setupPath = path.join(process.cwd(), 'OFFLINE_SETUP_INFO.json');
+    fs.writeFileSync(setupPath, JSON.stringify(setupInfo, null, 2));
+    console.log('✅ Offline setup info saved to OFFLINE_SETUP_INFO.json\n');
+  } catch (error) {
+    console.warn(`⚠️  Could not create offline setup info: ${error.message}`);
   }
 };
 
