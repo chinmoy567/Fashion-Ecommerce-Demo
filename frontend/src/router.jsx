@@ -19,6 +19,7 @@ import Wishlist from './pages/Wishlist'
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard'
+import AdminAnalytics from './pages/admin/Analytics'
 import AdminOrders from './pages/admin/Orders'
 import AdminProducts from './pages/admin/Products'
 import AdminCustomers from './pages/admin/Customers'
@@ -50,6 +51,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <AdminDashboard /> },
       { path: 'dashboard', element: <AdminDashboard /> },
+      { path: 'analytics', element: <AdminAnalytics /> },
       { path: 'orders', element: <AdminOrders /> },
       { path: 'products', element: <AdminProducts /> },
       { path: 'customers', element: <AdminCustomers /> },

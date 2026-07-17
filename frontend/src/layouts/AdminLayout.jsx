@@ -35,6 +35,12 @@ export default function AdminLayout() {
             Dashboard
           </Link>
           <Link
+            to="/admin/analytics"
+            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
+          >
+            Analytics
+          </Link>
+          <Link
             to="/admin/orders"
             className="block px-4 py-2 rounded hover:bg-gray-700 transition"
           >

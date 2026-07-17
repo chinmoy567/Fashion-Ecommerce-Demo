@@ -48,6 +48,10 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <a href="/admin/analytics" className="bg-white p-6 rounded shadow hover:shadow-lg cursor-pointer border-l-4 border-blue-600">
+          <h3 className="font-bold mb-2">📊 Analytics</h3>
+          <p className="text-gray-600">View sales trends and business metrics</p>
+        </a>
         <a href="/admin/orders" className="bg-white p-6 rounded shadow hover:shadow-lg cursor-pointer">
           <h3 className="font-bold mb-2">Manage Orders</h3>
           <p className="text-gray-600">View and manage customer orders</p>
