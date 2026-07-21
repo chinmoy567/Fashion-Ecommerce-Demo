@@ -4,8 +4,16 @@ import AdminUser from '../models/AdminUser.js';
 import { generateOTP, OTP_VALIDITY } from '../utils/otp.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
 import { verifyToken } from '../middlewares/auth.js';
+import emailService from '../services/emailService.js';
 
 const router = express.Router();
+
+// Send an OTP email without letting delivery failures break the request
+const sendOtpEmail = (email, otp, name) => {
+  emailService.sendOTPEmail(email, otp, name).catch((error) => {
+    console.error(`Failed to send OTP email to ${email}:`, error.message);
+  });
+};
 
 // POST /auth/register - Register new customer
 router.post('/register', async (req, res) => {
@@ -34,8 +42,7 @@ router.post('/register', async (req, res) => {
 
   await customer.save();
 
-  // TODO: Send OTP email via Nodemailer
-  console.log(`OTP for ${email}: ${otp}`);
+  sendOtpEmail(email, otp, name);
 
   res.status(201).json({
     success: true,
@@ -92,7 +99,7 @@ router.post('/login', async (req, res) => {
     customer.otp = otp;
     customer.otpExpiry = new Date(Date.now() + OTP_VALIDITY * 60000);
     await customer.save();
-    console.log(`OTP for ${email}: ${otp}`);
+    sendOtpEmail(email, otp, customer.name);
     return res.json({
       success: true,
       message: 'Email verification required. OTP sent.',

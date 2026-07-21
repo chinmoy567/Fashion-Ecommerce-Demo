@@ -1,9 +1,21 @@
+import { jest } from '@jest/globals';
 import request from 'supertest';
 import app from '../app.js';
 import Customer from '../models/Customer.js';
+import emailService from '../services/emailService.js';
 import { createCustomer, createAdmin } from './helpers.js';
 
 describe('POST /api/auth/register', () => {
+  let sendOtpSpy;
+
+  beforeEach(() => {
+    sendOtpSpy = jest.spyOn(emailService, 'sendOTPEmail').mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    sendOtpSpy.mockRestore();
+  });
+
   it('registers a new customer and issues an OTP', async () => {
     const res = await request(app).post('/api/auth/register').send({
       name: 'Jane Doe',
@@ -19,6 +31,8 @@ describe('POST /api/auth/register', () => {
     const stored = await Customer.findOne({ email: 'jane@test.com' });
     expect(stored.emailVerified).toBe(false);
     expect(stored.otp).toBeTruthy();
+
+    expect(sendOtpSpy).toHaveBeenCalledWith('jane@test.com', stored.otp, 'Jane Doe');
   });
 
   it('rejects duplicate email registration', async () => {
@@ -78,6 +92,16 @@ describe('POST /api/auth/verify-email', () => {
 });
 
 describe('POST /api/auth/login', () => {
+  let sendOtpSpy;
+
+  beforeEach(() => {
+    sendOtpSpy = jest.spyOn(emailService, 'sendOTPEmail').mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    sendOtpSpy.mockRestore();
+  });
+
   it('logs in a verified customer', async () => {
     await createCustomer({ email: 'login@test.com' });
 
@@ -92,7 +116,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('requires re-verification via OTP for an unverified customer', async () => {
-    await createCustomer({ email: 'unverified@test.com', emailVerified: false });
+    const { customer } = await createCustomer({ email: 'unverified@test.com', emailVerified: false });
 
     const res = await request(app).post('/api/auth/login').send({
       email: 'unverified@test.com',
@@ -101,6 +125,7 @@ describe('POST /api/auth/login', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.requiresVerification).toBe(true);
+    expect(sendOtpSpy).toHaveBeenCalledWith('unverified@test.com', expect.any(String), customer.name);
   });
 
   it('rejects invalid credentials', async () => {
