@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
+import ProductVariant from '../models/ProductVariant.js';
 import { connectDB } from '../config/database.js';
 
 dotenv.config();
@@ -328,6 +329,34 @@ const PRODUCTS = [
     image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"%3E%3Cdefs%3E%3ClinearGradient id="grad17" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23713f12;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%23450a0a;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23grad17)" width="400" height="400"/%3E%3Ctext x="200" y="200" font-size="100" fill="white" text-anchor="middle" dominant-baseline="middle"%3E🪗%3C/text%3E%3C/svg%3E'
   },
 
+  // Men's Upper Wear - T-Shirts (demo product with per-size/color variant stock)
+  {
+    name: 'DeerFit Signature Tee (Sizes & Colors)',
+    description: 'Demo product showcasing per-size/color variant stock tracking. Each size/color combination has its own independent stock count.',
+    categoryId: 'mens-upper',
+    gender: 'men',
+    clothingType: 'upper',
+    itemType: 't-shirt',
+    price: 1300,
+    stock: 0, // ignored once trackVariantStock is set; real stock lives on ProductVariant docs
+    sku: 'MEN-TSHIRT-VARIANT-001',
+    material: 'Cotton',
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Black', 'White'],
+    trackVariantStock: true,
+    variants: [
+      { size: 'S', color: 'Black', stock: 8 },
+      { size: 'M', color: 'Black', stock: 15 },
+      { size: 'L', color: 'Black', stock: 5 },
+      { size: 'XL', color: 'Black', stock: 0 },
+      { size: 'S', color: 'White', stock: 12 },
+      { size: 'M', color: 'White', stock: 20 },
+      { size: 'L', color: 'White', stock: 3 },
+      { size: 'XL', color: 'White', stock: 9 },
+    ],
+    image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"%3E%3Cdefs%3E%3ClinearGradient id="grad19" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%2306b6d4;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%230e7490;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23grad19)" width="400" height="400"/%3E%3Ctext x="200" y="200" font-size="100" fill="white" text-anchor="middle" dominant-baseline="middle"%3E👕%3C/text%3E%3C/svg%3E'
+  },
+
   // Accessories - Scarves
   {
     name: 'DeerFit Wool Scarf',
@@ -356,6 +385,7 @@ const seedDatabase = async () => {
     // Clear existing data
     await Product.deleteMany({});
     await Category.deleteMany({});
+    await ProductVariant.deleteMany({});
     console.log('✅ Cleared existing data\n');
 
     // Create categories
@@ -389,6 +419,7 @@ const seedDatabase = async () => {
     let productCount = 0;
 
     // Create products with category references
+    let variantCount = 0;
     for (const product of PRODUCTS) {
       const categoryId = categoryMap[product.categoryId];
       if (!categoryId) {
@@ -396,19 +427,30 @@ const seedDatabase = async () => {
         continue;
       }
 
-      await Product.create({
-        ...product,
+      const { variants, ...productData } = product;
+
+      const createdProduct = await Product.create({
+        ...productData,
         categoryId: categoryId,
         isFeatured: Math.random() > 0.7,
         status: 'active'
       });
       productCount++;
       console.log(`  ✓ ${product.name}`);
+
+      if (variants && variants.length > 0) {
+        await ProductVariant.insertMany(
+          variants.map((v) => ({ ...v, productId: createdProduct._id }))
+        );
+        variantCount += variants.length;
+        console.log(`    ✓ ${variants.length} variants seeded`);
+      }
     }
 
     console.log(`\n✅ Seeding complete!`);
     console.log(`   Categories created: ${Object.keys(categoryMap).length}`);
-    console.log(`   Products created: ${productCount}\n`);
+    console.log(`   Products created: ${productCount}`);
+    console.log(`   Variants created: ${variantCount}\n`);
 
     process.exit(0);
   } catch (error) {
