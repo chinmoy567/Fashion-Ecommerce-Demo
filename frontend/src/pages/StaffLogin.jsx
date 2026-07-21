@@ -20,8 +20,7 @@ export default function StaffLogin() {
       const { token, adminUser } = response.data.data
       // Save token to localStorage first (before any dispatch or navigation)
       localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(adminUser))
-      // Update Redux state
+      // Update Redux state (setUser persists the user to localStorage too)
       dispatch(setToken(token))
       dispatch(setUser(adminUser))
       // Navigate after state and storage are updated

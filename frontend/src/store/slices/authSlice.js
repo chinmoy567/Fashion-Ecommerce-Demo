@@ -1,7 +1,16 @@
 import { createSlice } from '@reduxjs/toolkit'
 
+// Rehydrate the persisted user on load; corrupt/missing data just falls back to null
+const getStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user')) || null
+  } catch {
+    return null
+  }
+}
+
 const initialState = {
-  user: null,
+  user: getStoredUser(),
   token: localStorage.getItem('token'),
   isAuthenticated: !!localStorage.getItem('token'),
   loading: false,
@@ -15,6 +24,7 @@ const authSlice = createSlice({
     setUser: (state, action) => {
       state.user = action.payload
       state.isAuthenticated = true
+      localStorage.setItem('user', JSON.stringify(action.payload))
     },
     setToken: (state, action) => {
       state.token = action.payload
@@ -25,6 +35,7 @@ const authSlice = createSlice({
       state.token = null
       state.isAuthenticated = false
       localStorage.removeItem('token')
+      localStorage.removeItem('user')
     },
     setLoading: (state, action) => {
       state.loading = action.payload
