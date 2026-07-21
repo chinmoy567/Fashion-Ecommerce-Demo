@@ -8,7 +8,7 @@ import OrderStatusChart from '../../components/charts/OrderStatusChart'
 import TopProductsChart from '../../components/charts/TopProductsChart'
 import CategoryPerformanceChart from '../../components/charts/CategoryPerformanceChart'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
