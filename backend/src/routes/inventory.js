@@ -1,5 +1,6 @@
 import express from 'express';
 import Product from '../models/Product.js';
+import ProductVariant from '../models/ProductVariant.js';
 import { verifyToken, verifyAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
@@ -32,19 +33,30 @@ router.get('/', verifyToken, verifyAdmin, async (req, res) => {
   });
 });
 
-// GET /inventory/summary - Get inventory summary
+// GET /inventory/summary - Get inventory summary (variant-tracked products counted by their variants)
 router.get('/summary', verifyToken, verifyAdmin, async (req, res) => {
-  const totalProducts = await Product.countDocuments();
-  const lowStockProducts = await Product.countDocuments({ stock: { $lt: 10, $gt: 0 } });
-  const outOfStockProducts = await Product.countDocuments({ stock: 0 });
-  const totalValue = await Product.aggregate([
-    {
-      $group: {
-        _id: null,
-        totalValue: { $sum: { $multiply: ['$price', '$stock'] } },
-      },
-    },
-  ]);
+  const simpleProducts = await Product.find({ trackVariantStock: { $ne: true } }).select('price stock');
+  const variantProducts = await Product.find({ trackVariantStock: true }).select('price');
+
+  let lowStockProducts = 0;
+  let outOfStockProducts = 0;
+  let totalInventoryValue = 0;
+
+  for (const product of simpleProducts) {
+    totalInventoryValue += product.price * product.stock;
+    if (product.stock === 0) outOfStockProducts += 1;
+    else if (product.stock < 10) lowStockProducts += 1;
+  }
+
+  for (const product of variantProducts) {
+    const variants = await ProductVariant.find({ productId: product._id }).select('stock');
+    const productStock = variants.reduce((sum, v) => sum + v.stock, 0);
+    totalInventoryValue += product.price * productStock;
+    if (productStock === 0) outOfStockProducts += 1;
+    else if (productStock < 10) lowStockProducts += 1;
+  }
+
+  const totalProducts = simpleProducts.length + variantProducts.length;
 
   res.json({
     success: true,
@@ -54,14 +66,14 @@ router.get('/summary', verifyToken, verifyAdmin, async (req, res) => {
       lowStockProducts,
       outOfStockProducts,
       availableProducts: totalProducts - outOfStockProducts,
-      totalInventoryValue: totalValue[0]?.totalValue || 0,
+      totalInventoryValue,
     },
   });
 });
 
-// POST /inventory/adjust - Adjust stock for a product (admin only)
+// POST /inventory/adjust - Adjust stock for a product or a specific variant (admin only)
 router.post('/adjust', verifyToken, verifyAdmin, async (req, res) => {
-  const { productId, quantity, reason } = req.body;
+  const { productId, variantId, quantity, reason } = req.body;
 
   if (!productId || quantity === undefined || !reason) {
     return res.status(400).json({
@@ -74,6 +86,31 @@ router.post('/adjust', verifyToken, verifyAdmin, async (req, res) => {
 
   if (!product) {
     return res.status(404).json({ success: false, message: 'Product not found' });
+  }
+
+  if (variantId) {
+    const variant = await ProductVariant.findOne({ _id: variantId, productId });
+    if (!variant) {
+      return res.status(404).json({ success: false, message: 'Variant not found' });
+    }
+
+    const previousStock = variant.stock;
+    variant.stock = Math.max(0, variant.stock + quantity);
+    await variant.save();
+
+    return res.json({
+      success: true,
+      message: 'Stock adjusted',
+      data: {
+        productId,
+        variantId,
+        productName: product.name,
+        reason,
+        previousStock,
+        newStock: variant.stock,
+        adjustment: quantity,
+      },
+    });
   }
 
   const previousStock = product.stock;

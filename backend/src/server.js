@@ -4,8 +4,11 @@ import app from './app.js';
 import { connectDB } from './config/database.js';
 import { validateEmailConfig, testEmailConnection } from './config/email.js';
 import { validateCloudinaryConfig, testCloudinaryConnection } from './config/cloudinary.js';
+import { validateEnv } from './config/validateEnv.js';
 
 dotenv.config();
+
+validateEnv();
 
 // Apply DNS override for MongoDB Atlas connection
 dns.setServers(['8.8.8.8', '8.8.4.4']);

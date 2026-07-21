@@ -8,6 +8,7 @@ import { errorHandler } from './middlewares/errorHandler.js';
 // Import routes (will be created)
 import authRoutes from './routes/auth.js';
 import productRoutes from './routes/product.js';
+import productVariantRoutes from './routes/productVariant.js';
 import categoryRoutes from './routes/category.js';
 import cartRoutes from './routes/cart.js';
 import orderRoutes from './routes/order.js';
@@ -35,6 +36,7 @@ app.get('/api/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/products/:productId/variants', productVariantRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);

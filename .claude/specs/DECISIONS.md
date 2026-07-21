@@ -348,11 +348,13 @@ Spec says manager can edit **only Featured Products** in Website Management. Doe
 3. **Full CMS**: Manager has all Website Management access (contradicts spec)
 
 ### Current Status
-⏳ **AWAITING DECISION**
+✅ **CONFIRMED** (2026-07-21)
 
-### To Decide
-- [ ] Confirm manager CMS scope
-- [ ] Document what manager can/cannot edit
+### Decision
+**Full CMS Access** — Manager has the same Website Management access as super-admin, including blog CMS (create/edit/delete posts) and Featured Products.
+
+### Rationale
+Blog CMS was added after original spec; manager role is trusted staff-level, so no need to further restrict CMS scope beyond RBAC already separating Customer/Manager/Super Admin.
 
 ---
 
@@ -367,11 +369,13 @@ Storefront marks billing address as optional. Admin checkout lists it plainly. C
 3. **Conditional**: Required for certain payment methods
 
 ### Current Status
-⏳ **AWAITING DECISION**
+✅ **CONFIRMED** (2026-07-21)
 
-### To Decide
-- [ ] Confirm billing address requirement
-- [ ] Define default behavior
+### Decision
+**Optional, Defaults to Shipping** — Billing address defaults to the shipping address; customer can override at checkout if paying with a different billing address.
+
+### Rationale
+Lowest friction for the common case (billing = shipping); manual bKash payment doesn't require billing address verification anyway, so making it mandatory adds no fraud protection.
 
 ---
 

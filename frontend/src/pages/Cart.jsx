@@ -26,15 +26,15 @@ export default function Cart() {
     }
   }
 
-  const handleUpdateQuantity = async (productId, quantity) => {
+  const handleUpdateQuantity = async (productId, variantId, quantity) => {
     if (quantity <= 0) return
-    dispatch(updateQuantity({ productId, quantity }))
-    await updateCartItem(productId, { quantity })
+    dispatch(updateQuantity({ productId, variantId, quantity }))
+    await updateCartItem(productId, { quantity, variantId })
   }
 
-  const handleRemove = async (productId) => {
-    dispatch(removeItem(productId))
-    await removeFromCart(productId)
+  const handleRemove = async (productId, variantId) => {
+    dispatch(removeItem({ productId, variantId }))
+    await removeFromCart(productId, variantId)
   }
 
   if (!isAuthenticated) {
@@ -64,35 +64,44 @@ export default function Cart() {
           {/* Cart Items */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded shadow">
-              {items.map(item => (
-                <div key={item.productId} className="flex gap-4 p-4 border-b">
-                  <div className="w-20 h-20 bg-gray-200 rounded flex items-center justify-center">
-                    <span className="text-gray-400">No Image</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold">{item.productId?.name}</h3>
-                    <p className="text-gray-600">৳{item.price} each</p>
-                    <div className="flex gap-2 mt-2">
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => handleUpdateQuantity(item.productId, parseInt(e.target.value))}
-                        className="border px-2 w-16"
-                      />
-                      <button
-                        onClick={() => handleRemove(item.productId)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        Remove
-                      </button>
+              {items.map(item => {
+                const productId = item.productId?._id || item.productId
+                const variant = item.variantId
+                return (
+                  <div key={`${productId}-${variant?._id || variant || 'base'}`} className="flex gap-4 p-4 border-b">
+                    <div className="w-20 h-20 bg-gray-200 rounded flex items-center justify-center">
+                      <span className="text-gray-400">No Image</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold">{item.productId?.name}</h3>
+                      {(variant?.size || variant?.color) && (
+                        <p className="text-sm text-gray-500">
+                          {variant.size && `Size: ${variant.size}`}{variant.size && variant.color && ' · '}{variant.color && `Color: ${variant.color}`}
+                        </p>
+                      )}
+                      <p className="text-gray-600">৳{item.price} each</p>
+                      <div className="flex gap-2 mt-2">
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => handleUpdateQuantity(productId, variant?._id || variant, parseInt(e.target.value))}
+                          className="border px-2 w-16"
+                        />
+                        <button
+                          onClick={() => handleRemove(productId, variant?._id || variant)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">৳{item.price * item.quantity}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold">৳{item.price * item.quantity}</p>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 

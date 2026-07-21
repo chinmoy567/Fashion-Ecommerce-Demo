@@ -8,7 +8,7 @@ const router = express.Router();
 // POST /reviews - Create a review for a product
 router.post('/', verifyToken, async (req, res) => {
   const { productId, rating, comment } = req.body;
-  const customerId = req.user.id;
+  const customerId = req.user.userId;
 
   if (!productId || !rating) {
     return res.status(400).json({ success: false, message: 'productId and rating are required' });
@@ -75,7 +75,7 @@ router.get('/product/:productId', async (req, res) => {
 
 // GET /reviews/my-reviews - Get customer's own reviews
 router.get('/my-reviews', verifyToken, async (req, res) => {
-  const customerId = req.user.id;
+  const customerId = req.user.userId;
   const { page = 1, limit = 10 } = req.query;
 
   const skip = (page - 1) * limit;
@@ -105,7 +105,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     return res.status(404).json({ success: false, message: 'Review not found' });
   }
 
-  if (review.customerId.toString() !== req.user.id) {
+  if (review.customerId.toString() !== req.user.userId) {
     return res.status(403).json({ success: false, message: 'You can only edit your own reviews' });
   }
 
@@ -132,7 +132,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
     return res.status(404).json({ success: false, message: 'Review not found' });
   }
 
-  if (review.customerId.toString() !== req.user.id) {
+  if (review.customerId.toString() !== req.user.userId) {
     return res.status(403).json({ success: false, message: 'You can only delete your own reviews' });
   }
 

@@ -6,18 +6,18 @@ const router = express.Router();
 
 // POST /notifications - Send notification (admin only)
 router.post('/', verifyToken, verifyAdmin, async (req, res) => {
-  const { userId, title, message, type, link } = req.body;
+  const { recipientId, recipientRole, message, type, data } = req.body;
 
-  if (!title || !message) {
-    return res.status(400).json({ success: false, message: 'title and message are required' });
+  if (!recipientRole || !message || !type) {
+    return res.status(400).json({ success: false, message: 'recipientRole, type, and message are required' });
   }
 
   const notification = new Notification({
-    userId: userId || null,
-    title,
+    recipientId: recipientId || null,
+    recipientRole,
+    type,
     message,
-    type: type || 'general',
-    link: link || null,
+    data: data || null,
     isRead: false,
   });
 
@@ -28,10 +28,10 @@ router.post('/', verifyToken, verifyAdmin, async (req, res) => {
 
 // GET /notifications - Get user's notifications
 router.get('/', verifyToken, async (req, res) => {
-  const userId = req.user.id;
+  const recipientId = req.user.userId;
   const { page = 1, limit = 10, unreadOnly = false } = req.query;
 
-  let query = { $or: [{ userId }, { userId: null }] };
+  let query = { $or: [{ recipientId }, { recipientId: null, recipientRole: req.user.role }] };
   if (unreadOnly === 'true') query.isRead = false;
 
   const skip = (page - 1) * limit;
@@ -63,7 +63,7 @@ router.put('/:id/read', verifyToken, async (req, res) => {
   }
 
   // Check authorization
-  if (notification.userId && notification.userId.toString() !== req.user.id) {
+  if (notification.recipientId && notification.recipientId.toString() !== req.user.userId) {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
 
@@ -75,10 +75,10 @@ router.put('/:id/read', verifyToken, async (req, res) => {
 
 // PUT /notifications/read-all - Mark all notifications as read
 router.put('/read-all', verifyToken, async (req, res) => {
-  const userId = req.user.id;
+  const recipientId = req.user.userId;
 
   await Notification.updateMany(
-    { $or: [{ userId }, { userId: null }], isRead: false },
+    { $or: [{ recipientId }, { recipientId: null, recipientRole: req.user.role }], isRead: false },
     { isRead: true }
   );
 
@@ -94,7 +94,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
   }
 
   // Check authorization
-  if (notification.userId && notification.userId.toString() !== req.user.id) {
+  if (notification.recipientId && notification.recipientId.toString() !== req.user.userId) {
     return res.status(403).json({ success: false, message: 'Unauthorized' });
   }
 
@@ -105,9 +105,9 @@ router.delete('/:id', verifyToken, async (req, res) => {
 
 // GET /notifications/count - Get unread notification count
 router.get('/count', verifyToken, async (req, res) => {
-  const userId = req.user.id;
+  const recipientId = req.user.userId;
   const unreadCount = await Notification.countDocuments({
-    $or: [{ userId }, { userId: null }],
+    $or: [{ recipientId }, { recipientId: null, recipientRole: req.user.role }],
     isRead: false,
   });
 

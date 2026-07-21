@@ -6,6 +6,7 @@ import { addToCart } from '../api/cart'
 import { setSelectedProduct } from '../store/slices/productSlice'
 import { addItem } from '../store/slices/cartSlice'
 import ReviewSection from '../components/ReviewSection'
+import RelatedProducts from '../components/RelatedProducts'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -15,6 +16,7 @@ export default function ProductDetail() {
   const { selectedProduct } = useSelector(state => state.products)
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [selectedVariantId, setSelectedVariantId] = useState('')
 
   useEffect(() => {
     fetchProduct()
@@ -37,21 +39,33 @@ export default function ProductDetail() {
       return
     }
 
+    if (selectedProduct.trackVariantStock && !selectedVariantId) {
+      alert('Please select a size/color')
+      return
+    }
+
     try {
-      await addToCart({ productId: id, quantity })
+      await addToCart({ productId: id, variantId: selectedVariantId || undefined, quantity })
       dispatch(addItem({
         productId: id,
+        variantId: selectedVariantId || undefined,
         quantity,
         price: selectedProduct.discountPrice || selectedProduct.price,
       }))
       alert('Added to cart!')
     } catch (error) {
-      console.error('Error adding to cart:', error)
+      alert(error.response?.data?.message || 'Error adding to cart')
     }
   }
 
   if (loading) return <div className="text-center py-12">Loading...</div>
   if (!selectedProduct) return <div className="text-center py-12">Product not found</div>
+
+  const variants = selectedProduct.variants || []
+  const selectedVariant = variants.find(v => v._id === selectedVariantId)
+  const availableStock = selectedProduct.trackVariantStock
+    ? (selectedVariant?.stock ?? 0)
+    : selectedProduct.stock
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -95,7 +109,7 @@ export default function ProductDetail() {
             {selectedProduct.discountPrice && (
               <span className="text-lg text-red-600 line-through">৳{selectedProduct.discountPrice}</span>
             )}
-            {selectedProduct.stock > 0 ? (
+            {availableStock > 0 ? (
               <span className="text-green-600 font-semibold text-lg">In Stock</span>
             ) : (
               <span className="text-red-600 font-semibold text-lg">Out of Stock</span>
@@ -104,33 +118,59 @@ export default function ProductDetail() {
 
           <p className="text-gray-700 mb-8 leading-relaxed">{selectedProduct.description}</p>
 
-          {/* Colors & Sizes */}
-          <div className="mb-8 pb-8 border-b space-y-4">
-            {selectedProduct.colors && selectedProduct.colors.length > 0 && (
-              <div>
-                <label className="block text-sm font-semibold mb-2">Available Colors</label>
-                <div className="flex gap-2 flex-wrap">
-                  {selectedProduct.colors.map(color => (
-                    <span key={color} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm capitalize">
-                      {color}
-                    </span>
-                  ))}
-                </div>
+          {/* Variant Picker (size/color with per-variant stock) */}
+          {selectedProduct.trackVariantStock && variants.length > 0 && (
+            <div className="mb-8 pb-8 border-b">
+              <label className="block text-sm font-semibold mb-2">Select Size / Color</label>
+              <div className="flex gap-2 flex-wrap">
+                {variants.map(v => (
+                  <button
+                    key={v._id}
+                    type="button"
+                    disabled={v.stock === 0}
+                    onClick={() => setSelectedVariantId(v._id)}
+                    className={`px-3 py-2 rounded-lg text-sm font-semibold border transition ${
+                      selectedVariantId === v._id
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-gray-100 text-gray-800 border-gray-200 hover:border-blue-400'
+                    } ${v.stock === 0 ? 'opacity-40 cursor-not-allowed line-through' : ''}`}
+                  >
+                    {[v.size, v.color].filter(Boolean).join(' / ')}
+                  </button>
+                ))}
               </div>
-            )}
-            {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
-              <div>
-                <label className="block text-sm font-semibold mb-2">Available Sizes</label>
-                <div className="flex gap-2 flex-wrap">
-                  {selectedProduct.sizes.map(size => (
-                    <span key={size} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm uppercase font-semibold">
-                      {size}
-                    </span>
-                  ))}
+            </div>
+          )}
+
+          {/* Colors & Sizes (informational, for products without variant tracking) */}
+          {!selectedProduct.trackVariantStock && (
+            <div className="mb-8 pb-8 border-b space-y-4">
+              {selectedProduct.colors && selectedProduct.colors.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Available Colors</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {selectedProduct.colors.map(color => (
+                      <span key={color} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm capitalize">
+                        {color}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+              {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Available Sizes</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {selectedProduct.sizes.map(size => (
+                      <span key={size} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm uppercase font-semibold">
+                        {size}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="mb-8 pb-8 border-b">
             <label className="block text-sm font-semibold mb-2">Quantity</label>
@@ -138,14 +178,14 @@ export default function ProductDetail() {
               <input
                 type="number"
                 min="1"
-                max={selectedProduct.stock}
+                max={availableStock}
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                 className="border border-gray-300 px-4 py-2 w-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 onClick={handleAddToCart}
-                disabled={selectedProduct.stock === 0}
+                disabled={availableStock === 0 || (selectedProduct.trackVariantStock && !selectedVariantId)}
                 className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition"
               >
                 Add to Cart
@@ -155,7 +195,7 @@ export default function ProductDetail() {
 
           <div className="space-y-4">
             <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="mb-2"><strong className="text-gray-700">Available Stock:</strong> <span className="text-green-600 font-semibold">{selectedProduct.stock}</span></p>
+              <p className="mb-2"><strong className="text-gray-700">Available Stock:</strong> <span className="text-green-600 font-semibold">{availableStock}</span></p>
               <p className="mb-2"><strong className="text-gray-700">SKU:</strong> <span className="text-gray-600">{selectedProduct.sku}</span></p>
               <p className="mb-2"><strong className="text-gray-700">Material:</strong> <span className="text-gray-600">{selectedProduct.material || 'N/A'}</span></p>
               <p><strong className="text-gray-700">Brand:</strong> <span className="text-gray-600">{selectedProduct.brand || 'DeerFit'}</span></p>
@@ -165,6 +205,7 @@ export default function ProductDetail() {
       </div>
 
       <ReviewSection />
+      <RelatedProducts />
     </div>
   )
 }

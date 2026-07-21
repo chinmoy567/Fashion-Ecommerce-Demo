@@ -101,7 +101,7 @@ export default function NotificationBell() {
                     !notification.isRead ? 'bg-blue-50' : ''
                   }`}
                 >
-                  <p className="font-semibold text-sm">{notification.title}</p>
+                  <p className="font-semibold text-sm capitalize">{notification.type?.replace(/_/g, ' ')}</p>
                   <p className="text-gray-600 text-sm">{notification.message}</p>
                   <p className="text-xs text-gray-400 mt-1">
                     {new Date(notification.createdAt).toLocaleDateString()}

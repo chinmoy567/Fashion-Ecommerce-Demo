@@ -6,12 +6,15 @@ const initialState = {
   loading: false,
 }
 
+// Two cart lines match when productId and variantId (if any) are both equal
+const sameLine = (a, b) => a.productId === b.productId && (a.variantId || null) === (b.variantId || null)
+
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
     addItem: (state, action) => {
-      const existingItem = state.items.find(item => item.productId === action.payload.productId)
+      const existingItem = state.items.find(item => sameLine(item, action.payload))
       if (existingItem) {
         existingItem.quantity += action.payload.quantity
       } else {
@@ -20,11 +23,11 @@ const cartSlice = createSlice({
       state.total = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
     },
     removeItem: (state, action) => {
-      state.items = state.items.filter(item => item.productId !== action.payload)
+      state.items = state.items.filter(item => !sameLine(item, action.payload))
       state.total = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
     },
     updateQuantity: (state, action) => {
-      const item = state.items.find(item => item.productId === action.payload.productId)
+      const item = state.items.find(item => sameLine(item, action.payload))
       if (item) {
         item.quantity = action.payload.quantity
       }

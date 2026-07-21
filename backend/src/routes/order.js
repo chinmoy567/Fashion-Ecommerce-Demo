@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import Payment from '../models/Payment.js';
 import Product from '../models/Product.js';
+import ProductVariant from '../models/ProductVariant.js';
 import Customer from '../models/Customer.js';
 import { verifyToken, verifyCustomer, verifyAdmin } from '../middlewares/auth.js';
 import { generateOrderNumber } from '../utils/orderNumber.js';
@@ -27,10 +28,22 @@ router.post('/', verifyToken, verifyCustomer, async (req, res) => {
     return res.status(400).json({ success: false, message: 'Cart is empty' });
   }
 
-  // Calculate totals
+  // Calculate totals and validate stock for each cart line
   let subtotal = 0;
   for (let item of cart.items) {
     subtotal += item.price * item.quantity;
+
+    if (item.variantId) {
+      const variant = await ProductVariant.findById(item.variantId);
+      if (!variant || variant.stock < item.quantity) {
+        return res.status(400).json({ success: false, message: `Insufficient stock for ${item.productId.name}` });
+      }
+    } else {
+      const product = await Product.findById(item.productId._id || item.productId);
+      if (!product || product.stock < item.quantity) {
+        return res.status(400).json({ success: false, message: `Insufficient stock for ${item.productId.name}` });
+      }
+    }
   }
 
   const shippingCharge = 60; // Default shipping
@@ -42,7 +55,7 @@ router.post('/', verifyToken, verifyCustomer, async (req, res) => {
     items: cart.items,
     shippingAddress,
     billingAddress,
-    shippingMethodId,
+    shippingMethod: shippingMethodId,
     subtotal,
     shippingCharge,
     total,
@@ -50,6 +63,15 @@ router.post('/', verifyToken, verifyCustomer, async (req, res) => {
   });
 
   await order.save();
+
+  // Deduct stock for each ordered line
+  for (let item of cart.items) {
+    if (item.variantId) {
+      await ProductVariant.findByIdAndUpdate(item.variantId, { $inc: { stock: -item.quantity } });
+    } else {
+      await Product.findByIdAndUpdate(item.productId._id || item.productId, { $inc: { stock: -item.quantity } });
+    }
+  }
 
   // Clear cart
   cart.items = [];
@@ -122,7 +144,7 @@ router.put('/:id/payment/confirm', verifyToken, verifyAdmin, async (req, res) =>
 // GET /orders - Get customer's orders
 router.get('/', verifyToken, verifyCustomer, async (req, res) => {
   const orders = await Order.find({ customerId: req.user.userId })
-    .populate('items.productId shippingMethodId paymentId')
+    .populate('items.productId shippingMethod paymentId')
     .sort({ createdAt: -1 });
 
   res.json({ success: true, message: 'Orders retrieved', data: orders });
@@ -143,15 +165,27 @@ router.get('/:id', verifyToken, async (req, res) => {
 router.put('/:id/status', verifyToken, verifyAdmin, async (req, res) => {
   const { status, parcelId } = req.body;
 
+  const existingOrder = await Order.findById(req.params.id);
+  if (!existingOrder) {
+    return res.status(404).json({ success: false, message: 'Order not found' });
+  }
+
+  // Restore stock if an order transitions to cancelled from a non-cancelled state
+  if (status === 'cancelled' && existingOrder.status !== 'cancelled') {
+    for (let item of existingOrder.items) {
+      if (item.variantId) {
+        await ProductVariant.findByIdAndUpdate(item.variantId, { $inc: { stock: item.quantity } });
+      } else {
+        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
+      }
+    }
+  }
+
   const order = await Order.findByIdAndUpdate(
     req.params.id,
     { status, parcelId },
     { new: true }
   );
-
-  if (!order) {
-    return res.status(404).json({ success: false, message: 'Order not found' });
-  }
 
   const customer = await Customer.findById(order.customerId);
   if (status === 'shipped') {

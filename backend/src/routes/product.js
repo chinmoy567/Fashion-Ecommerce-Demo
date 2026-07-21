@@ -1,7 +1,12 @@
 import express from 'express';
+import multer from 'multer';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
+import ProductVariant from '../models/ProductVariant.js';
 import { verifyToken, verifyAdmin } from '../middlewares/auth.js';
+import { productsToCsv, parseProductCsv } from '../utils/productCsv.js';
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 const router = express.Router();
 
@@ -174,6 +179,78 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /products/export/csv - Export all products as CSV (admin only)
+router.get('/export/csv', verifyToken, verifyAdmin, async (req, res) => {
+  const products = await Product.find().populate('categoryId', 'name').sort({ createdAt: -1 });
+  const csv = productsToCsv(products);
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="products-${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.send(csv);
+});
+
+// POST /products/import/csv - Bulk create/update products from a CSV file (admin only)
+router.post('/import/csv', verifyToken, verifyAdmin, upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'CSV file is required (field name: file)' });
+  }
+
+  const { rows, errors: parseErrors } = parseProductCsv(req.file.buffer.toString('utf-8'));
+  const categories = await Category.find();
+  const categoryByName = new Map(categories.map((c) => [c.name.toLowerCase(), c._id]));
+
+  const errors = [...parseErrors];
+  let created = 0;
+  let updated = 0;
+
+  for (const { line, data } of rows) {
+    const sku = data.sku?.trim();
+    const name = data.name?.trim();
+    const price = parseFloat(data.price);
+    const stock = parseInt(data.stock, 10);
+    const categoryName = data.category?.trim();
+
+    if (!sku || !name || Number.isNaN(price) || Number.isNaN(stock)) {
+      errors.push({ line, message: 'sku, name, price, and stock are required and must be valid' });
+      continue;
+    }
+
+    const categoryId = categoryByName.get(categoryName?.toLowerCase());
+    if (!categoryId) {
+      errors.push({ line, message: `Unknown category "${categoryName}"` });
+      continue;
+    }
+
+    const payload = {
+      name,
+      categoryId,
+      price,
+      discountPrice: data.discountPrice ? parseFloat(data.discountPrice) : undefined,
+      stock,
+      material: data.material || undefined,
+      sizes: data.sizes ? data.sizes.split('|').map((s) => s.trim()).filter(Boolean) : [],
+      colors: data.colors ? data.colors.split('|').map((c) => c.trim()).filter(Boolean) : [],
+      status: ['active', 'inactive', 'discontinued'].includes(data.status) ? data.status : 'active',
+    };
+
+    const existing = await Product.findOne({ sku });
+    if (existing) {
+      Object.assign(existing, payload);
+      await existing.save();
+      updated += 1;
+    } else {
+      await Product.create({ sku, ...payload });
+      created += 1;
+    }
+  }
+
+  res.json({
+    success: errors.length === 0,
+    message: `Import complete: ${created} created, ${updated} updated, ${errors.length} failed`,
+    data: { created, updated, failed: errors.length, errors },
+  });
+});
+
 // GET /products/:id - Get product details
 router.get('/:id', async (req, res) => {
   try {
@@ -186,11 +263,35 @@ router.get('/:id', async (req, res) => {
     product.viewCount += 1;
     await product.save();
 
-    res.json({ success: true, message: 'Product retrieved', data: product });
+    const variants = product.trackVariantStock
+      ? await ProductVariant.find({ productId: product._id }).sort({ size: 1, color: 1 })
+      : [];
+
+    res.json({ success: true, message: 'Product retrieved', data: { ...product.toObject(), variants } });
   } catch (error) {
     console.error('Product detail fetch error:', error.message);
     res.status(500).json({ success: false, message: 'Error fetching product', error: error.message });
   }
+});
+
+// GET /products/:id/related - Get related products from the same category
+router.get('/:id/related', async (req, res) => {
+  const { limit = 8 } = req.query;
+
+  const product = await Product.findById(req.params.id);
+  if (!product) {
+    return res.status(404).json({ success: false, message: 'Product not found' });
+  }
+
+  const related = await Product.find({
+    _id: { $ne: product._id },
+    categoryId: product.categoryId,
+    status: 'active',
+  })
+    .sort({ averageRating: -1, saleCount: -1 })
+    .limit(parseInt(limit));
+
+  res.json({ success: true, message: 'Related products retrieved', data: related });
 });
 
 // POST /products - Create product (admin only)
