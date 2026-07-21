@@ -103,7 +103,26 @@ router.get('/', async (req, res) => {
 
     let query = { status: 'active' };
 
-    if (category) query.categoryId = category;
+    if (category) {
+      // Accept a slug or a raw ObjectId; a matched category also pulls in its subcategories
+      const categoryDoc = await Category.findOne(
+        category.match(/^[0-9a-fA-F]{24}$/) ? { _id: category } : { slug: category }
+      );
+
+      if (categoryDoc) {
+        // Walk all descendant levels (category tree can be 3+ levels deep), not just direct children
+        const categoryIds = [categoryDoc._id];
+        let frontier = [categoryDoc._id];
+        while (frontier.length > 0) {
+          const children = await Category.find({ parentId: { $in: frontier } }).select('_id');
+          frontier = children.map((c) => c._id);
+          categoryIds.push(...frontier);
+        }
+        query.categoryId = categoryIds.length > 1 ? { $in: categoryIds } : categoryDoc._id;
+      } else {
+        query.categoryId = null; // Unknown category slug/id should return no results
+      }
+    }
     if (search) query.$text = { $search: search };
     if (featured === 'true') query.isFeatured = true;
 

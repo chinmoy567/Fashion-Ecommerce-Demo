@@ -27,6 +27,20 @@ describe('GET /api/products', () => {
     expect(res.body.data.items[0].name).toBe('Shirt');
   });
 
+  it('filters by category including grandchild subcategories', async () => {
+    const top = await createCategory({ name: 'Men', slug: 'mens-clothing' });
+    const mid = await createCategory({ name: "Men's Upper Wear", slug: 'mens-upper', parentId: top._id });
+    const leaf = await createCategory({ name: 'Shirts', slug: 'mens-shirt', parentId: mid._id });
+    await createProduct({ name: 'Formal Shirt', categoryId: leaf._id });
+    await createProduct({ name: 'Dress', categoryId: (await createCategory({ name: 'Women', slug: 'womens-clothing' }))._id });
+
+    const res = await request(app).get('/api/products').query({ category: 'mens-clothing' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.items.length).toBe(1);
+    expect(res.body.data.items[0].name).toBe('Formal Shirt');
+  });
+
   it('filters by price range', async () => {
     await createProduct({ name: 'Cheap', price: 500 });
     await createProduct({ name: 'Expensive', price: 5000 });
