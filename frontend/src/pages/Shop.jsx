@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useSearchParams, Link } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronDown, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { setProducts, setFilter, setPage } from '../store/slices/productSlice'
 import { getProducts, getFilterMetadata } from '../api/product'
+import ProductCard from '@/components/ProductCard'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const CATEGORIES = [
   { id: '', name: 'All Products', level: 0 },
@@ -60,12 +66,79 @@ const SORT_OPTIONS = [
   { value: 'top-rated', label: 'Top Rated' },
 ]
 
+// Renders a category and, if expanded, its children at any depth
+function CategoryNode({ category, depth, selectedCategory, expandedCategories, getSubcategories, toggleCategory, handleCategoryChange }) {
+  const children = getSubcategories(category.id)
+  const isExpanded = expandedCategories[category.id]
+  const isSelected = selectedCategory === category.id
+
+  return (
+    <div style={{ marginLeft: depth > 0 ? '1rem' : 0 }}>
+      <div className="flex items-center gap-1">
+        {children.length > 0 && (
+          <button
+            onClick={() => toggleCategory(category.id)}
+            className="text-muted-foreground hover:text-foreground p-1"
+          >
+            {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          </button>
+        )}
+        <button
+          onClick={() => handleCategoryChange(category.id)}
+          className={`flex-1 text-left px-2 py-2 rounded-lg transition-colors ${depth > 0 ? 'text-xs' : 'text-sm font-medium'} ${
+            isSelected
+              ? 'bg-gold text-black'
+              : 'bg-secondary text-secondary-foreground hover:bg-white/10'
+          }`}
+        >
+          {category.name}
+        </button>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {isExpanded && children.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-1 mt-1 overflow-hidden"
+          >
+            {children.map(child => (
+              <CategoryNode
+                key={child.id}
+                category={child}
+                depth={depth + 1}
+                selectedCategory={selectedCategory}
+                expandedCategories={expandedCategories}
+                getSubcategories={getSubcategories}
+                toggleCategory={toggleCategory}
+                handleCategoryChange={handleCategoryChange}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 export default function Shop() {
   const dispatch = useDispatch()
+  const [searchParams] = useSearchParams()
   const { products, filters, pagination } = useSelector(state => state.products)
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState('')
-  const [expandedCategories, setExpandedCategories] = useState({})
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
+  const [expandedCategories, setExpandedCategories] = useState(() => {
+    const initial = searchParams.get('category')
+    const expanded = {}
+    let current = CATEGORIES.find(cat => cat.id === initial)
+    while (current?.parent) {
+      expanded[current.parent] = true
+      current = CATEGORIES.find(cat => cat.id === current.parent)
+    }
+    return expanded
+  })
   const [filterMetadata, setFilterMetadata] = useState({ colors: [], sizes: [], priceRange: { min: 0, max: 10000 } })
   const [localFilters, setLocalFilters] = useState({
     search: '',
@@ -80,7 +153,7 @@ export default function Shop() {
   // Get main categories (level 1)
   const mainCategories = CATEGORIES.filter(cat => cat.level === 1)
 
-  // Get subcategories for a parent
+  // Get direct subcategories for a parent, at any depth
   const getSubcategories = (parentId) => {
     return CATEGORIES.filter(cat => cat.parent === parentId)
   }
@@ -96,6 +169,13 @@ export default function Shop() {
   // Load filter metadata on mount
   useEffect(() => {
     loadFilterMetadata()
+  }, [])
+
+  // Apply category from the URL (e.g. links from the homepage) on mount
+  useEffect(() => {
+    const category = searchParams.get('category')
+    if (category) dispatch(setFilter({ category }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Fetch products when filters change
@@ -194,21 +274,24 @@ export default function Shop() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">DeerFit Store</h1>
-        <p className="text-gray-600">Explore our premium collection of clothing and accessories</p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+      <div className="mb-10">
+        <p className="text-gold text-sm tracking-[0.3em] uppercase mb-3">Collection</p>
+        <h1 className="font-display text-4xl sm:text-5xl font-bold mb-2">The Store</h1>
+        <p className="text-muted-foreground">Explore our premium collection of clothing and accessories</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Filters Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow p-6 sticky top-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-card ring-1 ring-white/10 rounded-xl p-6 sticky top-24 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">Filters</h3>
+              <h3 className="font-display text-lg font-semibold flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4 text-gold" /> Filters
+              </h3>
               <button
                 onClick={resetFilters}
-                className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
+                className="text-xs text-gold hover:text-gold-light font-medium transition-colors"
               >
                 Reset
               </button>
@@ -216,104 +299,65 @@ export default function Shop() {
 
             {/* Search */}
             <div className="mb-6">
-              <label className="block text-sm font-semibold mb-2">Search</label>
-              <input
+              <label className="block text-sm font-medium mb-2">Search</label>
+              <Input
                 type="text"
                 placeholder="Search products..."
                 value={localFilters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {/* Categories */}
-            <div className="mb-6 pb-6 border-b">
-              <label className="block text-sm font-semibold mb-3">Category</label>
+            <div className="mb-6 pb-6 border-b border-white/10">
+              <label className="block text-sm font-medium mb-3">Category</label>
               <div className="space-y-1 max-h-96 overflow-y-auto">
                 {/* All Products */}
                 <button
                   onClick={() => handleCategoryChange('')}
-                  className={`w-full text-left px-3 py-2 rounded-lg transition text-sm ${
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors text-sm ${
                     selectedCategory === ''
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      ? 'bg-gold text-black font-semibold'
+                      : 'bg-secondary text-secondary-foreground hover:bg-white/10'
                   }`}
                 >
                   All Products
                 </button>
 
-                {/* Main Categories */}
-                {mainCategories.map(mainCat => {
-                  const subCategories = getSubcategories(mainCat.id)
-                  const isExpanded = expandedCategories[mainCat.id]
-
-                  return (
-                    <div key={mainCat.id}>
-                      <div className="flex items-center gap-1">
-                        {subCategories.length > 0 && (
-                          <button
-                            onClick={() => toggleCategory(mainCat.id)}
-                            className="text-gray-600 hover:text-gray-800 p-1 text-xs"
-                          >
-                            {isExpanded ? '▼' : '▶'}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleCategoryChange(mainCat.id)}
-                          className={`flex-1 text-left px-2 py-2 rounded-lg transition text-sm font-medium ${
-                            selectedCategory === mainCat.id
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                          }`}
-                        >
-                          {mainCat.name}
-                        </button>
-                      </div>
-
-                      {/* Subcategories */}
-                      {isExpanded && subCategories.length > 0 && (
-                        <div className="ml-4 space-y-1 mt-1">
-                          {subCategories.map(subCat => (
-                            <button
-                              key={subCat.id}
-                              onClick={() => handleCategoryChange(subCat.id)}
-                              className={`w-full text-left px-2 py-1.5 rounded text-xs transition ${
-                                selectedCategory === subCat.id
-                                  ? 'bg-blue-500 text-white font-semibold'
-                                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                              }`}
-                            >
-                              {subCat.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                {/* Main Categories (rendered recursively so any depth of subcategories works) */}
+                {mainCategories.map(mainCat => (
+                  <CategoryNode
+                    key={mainCat.id}
+                    category={mainCat}
+                    depth={0}
+                    selectedCategory={selectedCategory}
+                    expandedCategories={expandedCategories}
+                    getSubcategories={getSubcategories}
+                    toggleCategory={toggleCategory}
+                    handleCategoryChange={handleCategoryChange}
+                  />
+                ))}
               </div>
             </div>
 
             {/* Price Range */}
-            <div className="mb-6 pb-6 border-b">
-              <label className="block text-sm font-semibold mb-3">Price Range</label>
+            <div className="mb-6 pb-6 border-b border-white/10">
+              <label className="block text-sm font-medium mb-3">Price Range</label>
               <div className="space-y-2">
                 <div>
-                  <label className="text-xs text-gray-600">Min Price</label>
-                  <input
+                  <label className="text-xs text-muted-foreground">Min Price</label>
+                  <Input
                     type="number"
                     value={localFilters.minPrice}
                     onChange={(e) => handleFilterChange('minPrice', parseFloat(e.target.value) || 0)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-600">Max Price</label>
-                  <input
+                  <label className="text-xs text-muted-foreground">Max Price</label>
+                  <Input
                     type="number"
                     value={localFilters.maxPrice}
                     onChange={(e) => handleFilterChange('maxPrice', parseFloat(e.target.value) || filterMetadata.priceRange.max)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                   />
                 </div>
               </div>
@@ -321,8 +365,8 @@ export default function Shop() {
 
             {/* Colors */}
             {filterMetadata.colors.length > 0 && (
-              <div className="mb-6 pb-6 border-b">
-                <label className="block text-sm font-semibold mb-3">Color</label>
+              <div className="mb-6 pb-6 border-b border-white/10">
+                <label className="block text-sm font-medium mb-3">Color</label>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {filterMetadata.colors.map(color => (
                     <label key={color} className="flex items-center cursor-pointer">
@@ -332,9 +376,9 @@ export default function Shop() {
                         value={color}
                         checked={localFilters.color === color}
                         onChange={(e) => handleFilterChange('color', e.target.value)}
-                        className="mr-2 w-4 h-4"
+                        className="mr-2 w-4 h-4 accent-[#C9A24B]"
                       />
-                      <span className="text-sm text-gray-700 capitalize">{color}</span>
+                      <span className="text-sm text-muted-foreground capitalize">{color}</span>
                     </label>
                   ))}
                 </div>
@@ -342,17 +386,17 @@ export default function Shop() {
             )}
 
             {/* Sizes */}
-            <div className="mb-6 pb-6 border-b">
-              <label className="block text-sm font-semibold mb-3">Size</label>
+            <div className="mb-6 pb-6 border-b border-white/10">
+              <label className="block text-sm font-medium mb-3">Size</label>
               <div className="flex flex-wrap gap-2">
                 {SIZE_OPTIONS.map(size => (
                   <button
                     key={size}
                     onClick={() => handleFilterChange('size', localFilters.size === size ? '' : size)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       localFilters.size === size
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                        ? 'bg-gold text-black'
+                        : 'bg-secondary text-secondary-foreground hover:bg-white/10'
                     }`}
                   >
                     {size}
@@ -362,12 +406,12 @@ export default function Shop() {
             </div>
 
             {/* Sort */}
-            <div className="mb-6 pb-6 border-b">
-              <label className="block text-sm font-semibold mb-2">Sort By</label>
+            <div className="mb-6 pb-6 border-b border-white/10">
+              <label className="block text-sm font-medium mb-2">Sort By</label>
               <select
                 value={localFilters.sort}
                 onChange={(e) => handleFilterChange('sort', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-secondary border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gold/50"
               >
                 {SORT_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -382,82 +426,39 @@ export default function Shop() {
                   type="checkbox"
                   checked={localFilters.inStock}
                   onChange={(e) => handleFilterChange('inStock', e.target.checked)}
-                  className="mr-2 w-4 h-4 rounded"
+                  className="mr-2 w-4 h-4 rounded accent-[#C9A24B]"
                 />
-                <span className="text-sm text-gray-700">In Stock Only</span>
+                <span className="text-sm text-muted-foreground">In Stock Only</span>
               </label>
             </div>
 
             {/* Apply Filters Button */}
-            <button
-              onClick={applyFilters}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-            >
+            <Button onClick={applyFilters} className="w-full bg-gold text-black hover:bg-gold-light">
               Apply Filters
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Products Grid */}
         <div className="lg:col-span-3">
           {isLoading ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Loading products...</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="aspect-[3/4] w-full rounded-xl" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))}
             </div>
           ) : products && products.length > 0 ? (
             <>
-              <div className="mb-4 text-sm text-gray-600">
+              <div className="mb-4 text-sm text-muted-foreground">
                 Showing {products.length} of {pagination.total} products
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {products.map(product => (
-                  <Link
-                    key={product._id}
-                    to={`/products/${product._id}`}
-                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden group"
-                  >
-                    <div className="relative bg-gray-200 h-64 overflow-hidden flex items-center justify-center">
-                      {product.image ? (
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"%3E%3Crect fill="%23e5e7eb" width="400" height="400"/%3E%3Ctext x="200" y="200" font-size="40" fill="%239ca3af" text-anchor="middle" dominant-baseline="middle"%3E📸%3C/text%3E%3C/svg%3E'
-                          }}
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-gray-400">
-                          <span>No Image</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-lg mb-1 line-clamp-2">{product.name}</h3>
-                      <p className="text-gray-600 text-sm mb-3">{product.brand || 'DeerFit'}</p>
-
-                      {/* Product Details */}
-                      {product.colors && product.colors.length > 0 && (
-                        <p className="text-xs text-gray-500 mb-2">Colors: {product.colors.join(', ')}</p>
-                      )}
-                      {product.sizes && product.sizes.length > 0 && (
-                        <p className="text-xs text-gray-500 mb-2">Sizes: {product.sizes.join(', ')}</p>
-                      )}
-
-                      <div className="flex justify-between items-center">
-                        <span className="text-xl font-bold text-blue-600">৳{product.price}</span>
-                        {product.stock > 0 ? (
-                          <span className="text-green-600 text-sm font-semibold">In Stock</span>
-                        ) : (
-                          <span className="text-red-600 text-sm font-semibold">Out of Stock</span>
-                        )}
-                      </div>
-                      {product.stock > 0 && (
-                        <p className="text-xs text-gray-500 mt-2">{product.stock} available</p>
-                      )}
-                    </div>
-                  </Link>
+                  <ProductCard key={product._id} product={{ ...product, images: product.image ? [product.image] : [] }} />
                 ))}
               </div>
 
@@ -468,10 +469,10 @@ export default function Shop() {
                     <button
                       key={page}
                       onClick={() => dispatch(setPage(page))}
-                      className={`px-4 py-2 rounded-lg font-semibold transition ${
+                      className={`h-10 w-10 rounded-lg font-medium transition-colors ${
                         filters.page === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                          ? 'bg-gold text-black'
+                          : 'bg-secondary text-secondary-foreground hover:bg-white/10'
                       }`}
                     >
                       {page}
@@ -481,11 +482,11 @@ export default function Shop() {
               )}
             </>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600 text-lg">No products found. Try different filters.</p>
+            <div className="text-center py-20">
+              <p className="text-muted-foreground text-lg">No products found. Try different filters.</p>
               <button
                 onClick={resetFilters}
-                className="mt-4 text-blue-600 hover:text-blue-800 font-semibold"
+                className="mt-4 text-gold hover:text-gold-light font-medium"
               >
                 Reset all filters
               </button>

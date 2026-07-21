@@ -7,11 +7,14 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 export default function Inventory() {
   const { user } = useSelector(state => state.auth)
   const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [filter, setFilter] = useState('available')
+  const [search, setSearch] = useState('')
+  const [categoryId, setCategoryId] = useState('')
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [adjustmentData, setAdjustmentData] = useState({
     quantity: 0,
@@ -19,18 +22,28 @@ export default function Inventory() {
   })
 
   useEffect(() => {
-    if (user?.role !== 'admin' && user?.role !== 'super_admin') {
+    if (user?.role !== 'manager' && user?.role !== 'super_admin') {
       alert('Access denied')
       return
     }
-    fetchInventory()
+    fetchCategories()
     fetchSummary()
-  }, [page, filter])
+  }, [])
+
+  useEffect(() => {
+    if (user?.role !== 'manager' && user?.role !== 'super_admin') return
+    const debounce = setTimeout(fetchInventory, 300)
+    return () => clearTimeout(debounce)
+  }, [page, filter, search, categoryId])
 
   const fetchInventory = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API_BASE}/inventory?page=${page}&limit=20&status=${filter}`, {
+      const params = new URLSearchParams({ page, limit: 20, status: filter })
+      if (search) params.set('search', search)
+      if (categoryId) params.set('categoryId', categoryId)
+
+      const response = await axios.get(`${API_BASE}/inventory?${params}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
       setProducts(response.data.data.items || [])
@@ -39,6 +52,15 @@ export default function Inventory() {
       console.error('Error fetching inventory:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}/categories`)
+      setCategories(response.data.data || [])
+    } catch (error) {
+      console.error('Error fetching categories:', error)
     }
   }
 
@@ -116,7 +138,7 @@ export default function Inventory() {
         </div>
       )}
 
-      <div className="mb-6 flex gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         <button
           onClick={() => { setFilter('available'); setPage(1); }}
           className={`px-4 py-2 rounded ${filter === 'available' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
@@ -135,6 +157,26 @@ export default function Inventory() {
         >
           Out of Stock
         </button>
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-3">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Search by name or SKU..."
+          className="border px-4 py-2 rounded flex-1 min-w-[220px] max-w-sm"
+        />
+        <select
+          value={categoryId}
+          onChange={(e) => { setCategoryId(e.target.value); setPage(1); }}
+          className="border px-4 py-2 rounded"
+        >
+          <option value="">All Categories</option>
+          {categories.map((cat) => (
+            <option key={cat._id} value={cat._id}>{cat.name}</option>
+          ))}
+        </select>
       </div>
 
       {selectedProduct && (
@@ -196,6 +238,7 @@ export default function Inventory() {
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="px-6 py-3 text-left text-sm font-semibold">Product</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold">Category</th>
               <th className="px-6 py-3 text-left text-sm font-semibold">SKU</th>
               <th className="px-6 py-3 text-left text-sm font-semibold">Price (৳)</th>
               <th className="px-6 py-3 text-left text-sm font-semibold">Stock</th>
@@ -206,7 +249,7 @@ export default function Inventory() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                   Loading...
                 </td>
               </tr>
@@ -214,6 +257,7 @@ export default function Inventory() {
               products.map((product) => (
                 <tr key={product._id} className="border-b hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm font-medium">{product.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{product.categoryId?.name || '—'}</td>
                   <td className="px-6 py-4 text-sm">{product.sku}</td>
                   <td className="px-6 py-4 text-sm">{product.price}</td>
                   <td className="px-6 py-4 text-sm font-semibold">{product.stock}</td>
@@ -234,7 +278,7 @@ export default function Inventory() {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                   No products found
                 </td>
               </tr>

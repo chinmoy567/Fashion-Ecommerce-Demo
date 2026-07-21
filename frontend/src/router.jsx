@@ -34,6 +34,7 @@ import AdminReviews from './pages/admin/Reviews'
 import AdminCoupons from './pages/admin/Coupons'
 import AdminInventory from './pages/admin/Inventory'
 import AdminBlog from './pages/admin/Blog'
+import StaffManagement from './pages/admin/StaffManagement'
 
 const router = createBrowserRouter([
   {
@@ -74,6 +75,7 @@ const router = createBrowserRouter([
       { path: 'coupons', element: <AdminCoupons /> },
       { path: 'inventory', element: <AdminInventory /> },
       { path: 'blog', element: <AdminBlog /> },
+      { path: 'staff', element: <StaffManagement /> },
     ],
   },
 ])

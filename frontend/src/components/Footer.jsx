@@ -1,36 +1,65 @@
+import { Camera, ThumbsUp, AtSign } from 'lucide-react'
+import { useScrollReveal } from '@/hooks/useScrollReveal'
+
+const columns = [
+  {
+    title: 'About Us',
+    body: 'Premium clothing for modern Bangladesh.',
+  },
+  {
+    title: 'Quick Links',
+    links: [
+      { label: 'Shop', href: '/shop' },
+      { label: 'Journal', href: '/blog' },
+      { label: 'FAQ', href: '#' },
+    ],
+  },
+  {
+    title: 'Policies',
+    links: [
+      { label: 'Privacy', href: '#' },
+      { label: 'Terms', href: '#' },
+      { label: 'Shipping', href: '#' },
+    ],
+  },
+  {
+    title: 'Contact',
+    body: 'info@deerfit.com\n+880 1234 567890',
+  },
+]
+
 export default function Footer() {
+  const revealRef = useScrollReveal({ y: 24 })
+
   return (
-    <footer className="bg-gray-900 text-white mt-20">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="font-bold mb-4">About Us</h3>
-            <p className="text-gray-400">Premium clothing for modern Bangladesh.</p>
-          </div>
-          <div>
-            <h3 className="font-bold mb-4">Quick Links</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white">Shop</a></li>
-              <li><a href="#" className="hover:text-white">Contact</a></li>
-              <li><a href="#" className="hover:text-white">FAQ</a></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-bold mb-4">Policies</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white">Privacy</a></li>
-              <li><a href="#" className="hover:text-white">Terms</a></li>
-              <li><a href="#" className="hover:text-white">Shipping</a></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-bold mb-4">Contact</h3>
-            <p className="text-gray-400">Email: info@fashionhub.com</p>
-            <p className="text-gray-400">Phone: +880 1234 567890</p>
-          </div>
+    <footer className="mt-24 border-t border-white/10 bg-background">
+      <div ref={revealRef} className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
+          {columns.map(col => (
+            <div key={col.title} data-reveal>
+              <h3 className="font-display font-semibold mb-4">{col.title}</h3>
+              {col.links ? (
+                <ul className="space-y-2 text-muted-foreground text-sm">
+                  {col.links.map(link => (
+                    <li key={link.label}>
+                      <a href={link.href} className="hover:text-gold transition-colors">{link.label}</a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground text-sm whitespace-pre-line">{col.body}</p>
+              )}
+            </div>
+          ))}
         </div>
-        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2026 FashionHub. All rights reserved.</p>
+
+        <div data-reveal className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-white/10 mt-12 pt-8">
+          <p className="text-muted-foreground text-sm">&copy; 2026 DeerFit. All rights reserved.</p>
+          <div className="flex gap-4 text-muted-foreground">
+            <a href="#" aria-label="Instagram" className="hover:text-gold transition-colors"><Camera className="h-4 w-4" /></a>
+            <a href="#" aria-label="Facebook" className="hover:text-gold transition-colors"><ThumbsUp className="h-4 w-4" /></a>
+            <a href="#" aria-label="Contact" className="hover:text-gold transition-colors"><AtSign className="h-4 w-4" /></a>
+          </div>
         </div>
       </div>
     </footer>

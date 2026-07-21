@@ -1,18 +1,22 @@
 import express from 'express';
 import Product from '../models/Product.js';
 import ProductVariant from '../models/ProductVariant.js';
+import Category from '../models/Category.js';
+import Brand from '../models/Brand.js';
 import { verifyToken, verifyAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
 
 // GET /inventory - Get inventory status (admin only)
 router.get('/', verifyToken, verifyAdmin, async (req, res) => {
-  const { page = 1, limit = 20, status } = req.query;
+  const { page = 1, limit = 20, status, search, categoryId } = req.query;
 
   let query = {};
   if (status === 'low') query.stock = { $lt: 10, $gt: 0 };
   if (status === 'outofstock') query.stock = 0;
   if (status === 'available') query.stock = { $gt: 0 };
+  if (categoryId) query.categoryId = categoryId;
+  if (search) query.$or = [{ name: { $regex: search, $options: 'i' } }, { sku: { $regex: search, $options: 'i' } }];
 
   const skip = (page - 1) * limit;
   const products = await Product.find(query)

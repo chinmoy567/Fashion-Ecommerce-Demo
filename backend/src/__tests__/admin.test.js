@@ -40,8 +40,10 @@ describe('GET /api/admin/customers', () => {
 });
 
 describe('POST /api/admin/create-staff', () => {
-  it('creates a new staff account', async () => {
-    const res = await request(app).post('/api/admin/create-staff').send({
+  it('creates a new staff account for a super admin', async () => {
+    const { token } = await createAdmin({ email: 'superadmin1@test.com' });
+
+    const res = await request(app).post('/api/admin/create-staff').set('Authorization', `Bearer ${token}`).send({
       email: 'newstaff@test.com',
       password: 'Password123!',
       fullName: 'New Staff',
@@ -52,8 +54,34 @@ describe('POST /api/admin/create-staff', () => {
     expect(res.body.data.role).toBe('manager');
   });
 
-  it('rejects an invalid role', async () => {
+  it('rejects a manager token', async () => {
+    const { token } = await createAdmin({ email: 'manager1@test.com', role: 'manager' });
+
+    const res = await request(app).post('/api/admin/create-staff').set('Authorization', `Bearer ${token}`).send({
+      email: 'blocked@test.com',
+      password: 'Password123!',
+      fullName: 'Blocked',
+      role: 'manager',
+    });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('rejects request without a token', async () => {
     const res = await request(app).post('/api/admin/create-staff').send({
+      email: 'notoken@test.com',
+      password: 'Password123!',
+      fullName: 'No Token',
+      role: 'manager',
+    });
+
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects an invalid role', async () => {
+    const { token } = await createAdmin({ email: 'superadmin2@test.com' });
+
+    const res = await request(app).post('/api/admin/create-staff').set('Authorization', `Bearer ${token}`).send({
       email: 'badrole@test.com',
       password: 'Password123!',
       fullName: 'Bad Role',
@@ -64,14 +92,16 @@ describe('POST /api/admin/create-staff', () => {
   });
 
   it('rejects a duplicate staff email with 409', async () => {
-    await request(app).post('/api/admin/create-staff').send({
+    const { token } = await createAdmin({ email: 'superadmin3@test.com' });
+
+    await request(app).post('/api/admin/create-staff').set('Authorization', `Bearer ${token}`).send({
       email: 'dupstaff@test.com',
       password: 'Password123!',
       fullName: 'Dup Staff',
       role: 'manager',
     });
 
-    const res = await request(app).post('/api/admin/create-staff').send({
+    const res = await request(app).post('/api/admin/create-staff').set('Authorization', `Bearer ${token}`).send({
       email: 'dupstaff@test.com',
       password: 'Password123!',
       fullName: 'Dup Staff',
@@ -79,6 +109,52 @@ describe('POST /api/admin/create-staff', () => {
     });
 
     expect(res.status).toBe(409);
+  });
+});
+
+describe('GET /api/admin/staff', () => {
+  it('lists staff for a super admin', async () => {
+    const { token } = await createAdmin({ email: 'superadmin4@test.com' });
+
+    const res = await request(app).get('/api/admin/staff').set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('rejects a manager token', async () => {
+    const { token } = await createAdmin({ email: 'manager2@test.com', role: 'manager' });
+
+    const res = await request(app).get('/api/admin/staff').set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('PUT /api/admin/staff/:id/status', () => {
+  it('lets a super admin deactivate another staff member', async () => {
+    const { token } = await createAdmin({ email: 'superadmin5@test.com' });
+    const { adminUser: manager } = await createAdmin({ email: 'manager3@test.com', role: 'manager' });
+
+    const res = await request(app)
+      .put(`/api/admin/staff/${manager._id}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ isActive: false });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.isActive).toBe(false);
+  });
+
+  it('rejects a manager token', async () => {
+    const { token } = await createAdmin({ email: 'manager4@test.com', role: 'manager' });
+    const { adminUser: otherManager } = await createAdmin({ email: 'manager5@test.com', role: 'manager' });
+
+    const res = await request(app)
+      .put(`/api/admin/staff/${otherManager._id}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ isActive: false });
+
+    expect(res.status).toBe(403);
   });
 });
 

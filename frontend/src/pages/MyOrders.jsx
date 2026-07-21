@@ -1,14 +1,27 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { getOrders } from '../api/order'
 import { setOrders } from '../store/slices/orderSlice'
+import { Button } from '@/components/ui/button'
+import { useScrollReveal } from '@/hooks/useScrollReveal'
+
+const STATUS_STYLES = {
+  pending: 'bg-warning/15 text-warning',
+  confirmed: 'bg-blue-500/15 text-blue-400',
+  shipped: 'bg-purple-500/15 text-purple-400',
+  delivered: 'bg-success/15 text-success',
+  completed: 'bg-secondary text-secondary-foreground',
+  cancelled: 'bg-destructive/15 text-destructive',
+}
 
 export default function MyOrders() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { isAuthenticated } = useSelector(state => state.auth)
   const { orders } = useSelector(state => state.orders)
+  const revealRef = useScrollReveal()
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -27,73 +40,66 @@ export default function MyOrders() {
     }
   }
 
-  const getStatusBadgeColor = (status) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-700',
-      confirmed: 'bg-blue-100 text-blue-700',
-      shipped: 'bg-purple-100 text-purple-700',
-      delivered: 'bg-green-100 text-green-700',
-      completed: 'bg-gray-100 text-gray-700',
-      cancelled: 'bg-red-100 text-red-700',
-    }
-    return colors[status] || 'bg-gray-100 text-gray-700'
-  }
+  const getStatusBadgeColor = (status) => STATUS_STYLES[status] || 'bg-secondary text-secondary-foreground'
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">My Orders</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+      <h1 className="font-display text-4xl font-bold mb-10">My Orders</h1>
 
       {orders.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="mb-4">No orders yet</p>
-          <Link to="/shop" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+        <div className="text-center py-24">
+          <p className="mb-6 text-muted-foreground">No orders yet</p>
+          <Button className="bg-gold text-black hover:bg-gold-light" render={<Link to="/shop" />} nativeButton={false}>
             Continue Shopping
-          </Link>
+          </Button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div ref={revealRef} className="space-y-4">
           {orders.map(order => (
-            <div key={order._id} className="bg-white p-6 rounded shadow hover:shadow-lg transition">
+            <motion.div
+              key={order._id}
+              data-reveal
+              whileHover={{ y: -2 }}
+              className="bg-card ring-1 ring-white/10 hover:ring-gold/30 p-6 rounded-xl transition-colors"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <p className="font-bold text-lg">{order.orderNumber}</p>
-                  <p className="text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  <p className="font-semibold text-lg">{order.orderNumber}</p>
+                  <p className="text-muted-foreground text-sm">{new Date(order.createdAt).toLocaleDateString()}</p>
                 </div>
-                <span className={`px-3 py-1 rounded font-semibold ${getStatusBadgeColor(order.status)}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(order.status)}`}>
                   {order.status.toUpperCase()}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div>
-                  <p className="text-gray-600 text-sm">Items</p>
-                  <p className="font-semibold">{order.items.length}</p>
+                  <p className="text-muted-foreground text-xs">Items</p>
+                  <p className="font-medium">{order.items.length}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600 text-sm">Total</p>
-                  <p className="font-semibold">৳{order.total}</p>
+                  <p className="text-muted-foreground text-xs">Total</p>
+                  <p className="font-medium text-gold">৳{order.total}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600 text-sm">Shipping</p>
-                  <p className="font-semibold">৳{order.shippingCharge}</p>
+                  <p className="text-muted-foreground text-xs">Shipping</p>
+                  <p className="font-medium">৳{order.shippingCharge}</p>
                 </div>
                 {order.parcelId && (
                   <div>
-                    <p className="text-gray-600 text-sm">Parcel ID</p>
-                    <p className="font-semibold">{order.parcelId}</p>
+                    <p className="text-muted-foreground text-xs">Parcel ID</p>
+                    <p className="font-medium">{order.parcelId}</p>
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-2">
-                <Link
-                  to={`/orders/${order._id}/tracking`}
-                  className="text-blue-600 hover:underline"
-                >
-                  Track Order
-                </Link>
-              </div>
-            </div>
+              <Link
+                to={`/orders/${order._id}/tracking`}
+                className="text-gold hover:text-gold-light text-sm font-medium transition-colors"
+              >
+                Track Order
+              </Link>
+            </motion.div>
           ))}
         </div>
       )}

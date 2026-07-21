@@ -3,10 +3,22 @@ import multer from 'multer';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import ProductVariant from '../models/ProductVariant.js';
+import ProductImage from '../models/ProductImage.js';
 import { verifyToken, verifyAdmin } from '../middlewares/auth.js';
 import { productsToCsv, parseProductCsv } from '../utils/productCsv.js';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+// Fetch each product's primary (or first) image URL, keyed by productId
+async function getPrimaryImageMap(productIds) {
+  const images = await ProductImage.find({ productId: { $in: productIds } }).sort({ isPrimary: -1, createdAt: 1 });
+  const map = new Map();
+  for (const img of images) {
+    const key = String(img.productId);
+    if (!map.has(key)) map.set(key, img.url);
+  }
+  return map;
+}
 
 const router = express.Router();
 
@@ -176,11 +188,14 @@ router.get('/', async (req, res) => {
 
     const total = await Product.countDocuments(query);
 
+    const imageMap = await getPrimaryImageMap(products.map((p) => p._id));
+    const items = products.map((p) => ({ ...p.toObject(), image: imageMap.get(String(p._id)) || null }));
+
     res.json({
       success: true,
       message: 'Products retrieved',
       data: {
-        items: products || [],
+        items,
         pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) },
       },
     });
@@ -285,8 +300,13 @@ router.get('/:id', async (req, res) => {
     const variants = product.trackVariantStock
       ? await ProductVariant.find({ productId: product._id }).sort({ size: 1, color: 1 })
       : [];
+    const images = await ProductImage.find({ productId: product._id }).sort({ isPrimary: -1, createdAt: 1 });
 
-    res.json({ success: true, message: 'Product retrieved', data: { ...product.toObject(), variants } });
+    res.json({
+      success: true,
+      message: 'Product retrieved',
+      data: { ...product.toObject(), image: images[0]?.url || null, images: images.map((i) => i.url), variants },
+    });
   } catch (error) {
     console.error('Product detail fetch error:', error.message);
     res.status(500).json({ success: false, message: 'Error fetching product', error: error.message });
@@ -310,7 +330,10 @@ router.get('/:id/related', async (req, res) => {
     .sort({ averageRating: -1, saleCount: -1 })
     .limit(parseInt(limit));
 
-  res.json({ success: true, message: 'Related products retrieved', data: related });
+  const imageMap = await getPrimaryImageMap(related.map((p) => p._id));
+  const data = related.map((p) => ({ ...p.toObject(), image: imageMap.get(String(p._id)) || null }));
+
+  res.json({ success: true, message: 'Related products retrieved', data });
 });
 
 // POST /products - Create product (admin only)

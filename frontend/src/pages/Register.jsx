@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { registerCustomer, verifyEmail } from '../api/auth'
+import AuthCard from '../components/AuthCard'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function Register() {
   const navigate = useNavigate()
@@ -37,109 +42,95 @@ export default function Register() {
     }
   }
 
+  const ErrorBanner = () => error && (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-destructive/10 text-destructive text-sm p-3 mb-4 rounded-lg"
+    >
+      {error}
+    </motion.div>
+  )
+
   if (step === 'verify') {
     return (
-      <div className="max-w-md mx-auto py-12">
-        <div className="bg-white p-8 rounded shadow">
-          <h1 className="text-2xl font-bold mb-6">Verify Email</h1>
-          <p className="text-gray-600 mb-4">Enter the OTP sent to {formData.email}</p>
+      <AuthCard title="Verify Email" subtitle={`Enter the OTP sent to ${formData.email}`}>
+        <ErrorBanner />
+        <form onSubmit={handleVerify} className="space-y-4">
+          <div>
+            <Label className="mb-2">OTP</Label>
+            <Input
+              type="text"
+              required
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              placeholder="Enter 6-digit OTP"
+            />
+          </div>
 
-          {error && <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">{error}</div>}
-
-          <form onSubmit={handleVerify} className="space-y-4">
-            <div>
-              <label className="block font-semibold mb-2">OTP</label>
-              <input
-                type="text"
-                required
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                placeholder="Enter 6-digit OTP"
-                className="w-full border px-4 py-2 rounded"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              {loading ? 'Verifying...' : 'Verify'}
-            </button>
-          </form>
-        </div>
-      </div>
+          <Button type="submit" disabled={loading} className="w-full bg-gold text-black hover:bg-gold-light h-11">
+            {loading ? 'Verifying...' : 'Verify'}
+          </Button>
+        </form>
+      </AuthCard>
     )
   }
 
   return (
-    <div className="max-w-md mx-auto py-12">
-      <div className="bg-white p-8 rounded shadow">
-        <h1 className="text-2xl font-bold mb-6">Create Account</h1>
+    <AuthCard title="Create Account" subtitle="Join DeerFit for premium style">
+      <ErrorBanner />
+      <form onSubmit={handleRegister} className="space-y-4">
+        <div>
+          <Label className="mb-2">Name</Label>
+          <Input
+            type="text"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+        </div>
 
-        {error && <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">{error}</div>}
+        <div>
+          <Label className="mb-2">Email</Label>
+          <Input
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          />
+        </div>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div>
-            <label className="block font-semibold mb-2">Name</label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full border px-4 py-2 rounded"
-            />
-          </div>
+        <div>
+          <Label className="mb-2">Phone</Label>
+          <Input
+            type="tel"
+            required
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          />
+        </div>
 
-          <div>
-            <label className="block font-semibold mb-2">Email</label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full border px-4 py-2 rounded"
-            />
-          </div>
+        <div>
+          <Label className="mb-2">Password</Label>
+          <Input
+            type="password"
+            required
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          />
+        </div>
 
-          <div>
-            <label className="block font-semibold mb-2">Phone</label>
-            <input
-              type="tel"
-              required
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full border px-4 py-2 rounded"
-            />
-          </div>
+        <Button type="submit" disabled={loading} className="w-full bg-gold text-black hover:bg-gold-light h-11">
+          {loading ? 'Registering...' : 'Register'}
+        </Button>
+      </form>
 
-          <div>
-            <label className="block font-semibold mb-2">Password</label>
-            <input
-              type="password"
-              required
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full border px-4 py-2 rounded"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {loading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
-
-        <p className="mt-4 text-center">
-          Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Login
-          </Link>
-        </p>
-      </div>
-    </div>
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Already have an account?{' '}
+        <Link to="/login" className="text-gold hover:text-gold-light transition-colors">
+          Login
+        </Link>
+      </p>
+    </AuthCard>
   )
 }

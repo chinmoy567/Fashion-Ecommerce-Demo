@@ -1,12 +1,28 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { ArrowRight } from 'lucide-react'
 import { setProducts, setLoading } from '../store/slices/productSlice'
 import { getProducts } from '../api/product'
+import { gsap } from '@/lib/gsap'
+import { useScrollReveal } from '@/hooks/useScrollReveal'
+import { Button } from '@/components/ui/button'
+import ProductCard from '@/components/ProductCard'
+
+const categories = [
+  { name: 'Men', slug: 'mens-clothing' },
+  { name: 'Women', slug: 'womens-clothing' },
+  { name: 'Kids', slug: 'kids-clothing' },
+  { name: 'Accessories', slug: 'accessories' },
+]
 
 export default function Home() {
   const dispatch = useDispatch()
   const { products } = useSelector(state => state.products)
+  const heroRef = useRef(null)
+  const categoryReveal = useScrollReveal()
+  const productReveal = useScrollReveal()
 
   useEffect(() => {
     fetchFeaturedProducts()
@@ -24,62 +40,73 @@ export default function Home() {
     }
   }
 
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const targets = heroRef.current.querySelectorAll('[data-hero]')
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+      if (reduced) {
+        gsap.set(targets, { opacity: 1, y: 0 })
+        return
+      }
+
+      gsap.fromTo(
+        targets,
+        { opacity: 0, y: 28 },
+        { opacity: 1, y: 0, duration: 1, ease: 'power3.out', stagger: 0.15, delay: 0.1 }
+      )
+    }, heroRef)
+
+    return () => ctx.revert()
+  }, [])
+
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-700 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold mb-6">Welcome to FashionHub</h1>
-          <p className="text-xl mb-8">Discover the latest trends in Bangladesh clothing</p>
-          <Link
-            to="/shop"
-            className="inline-block bg-blue-600 text-white px-8 py-3 rounded hover:bg-blue-700"
-          >
-            Shop Now
-          </Link>
+      {/* Hero */}
+      <div ref={heroRef} className="relative overflow-hidden bg-gold-glow bg-gradient-to-b from-secondary/40 to-background py-28 sm:py-36">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <p data-hero className="text-gold text-sm tracking-[0.3em] uppercase mb-4">New Season Arrivals</p>
+          <h1 data-hero className="font-display text-5xl sm:text-7xl font-bold mb-6 text-balance">
+            Welcome to DeerFit
+          </h1>
+          <p data-hero className="text-lg text-muted-foreground mb-10 text-balance">
+            Discover the latest trends in Bangladesh clothing
+          </p>
+          <div data-hero>
+            <Button
+              size="lg"
+              className="bg-gold text-black hover:bg-gold-light h-12 px-8 text-base"
+              render={<Link to="/shop" />} nativeButton={false}
+            >
+              Shop Now <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Categories Section */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <h2 className="text-3xl font-bold mb-8">Shop by Category</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {['Men', 'Women', 'Kids', 'Accessories', 'Shoes', 'Winter', 'Summer', 'Sale'].map(cat => (
-            <Link
-              key={cat}
-              to={`/shop?category=${cat.toLowerCase()}`}
-              className="bg-gray-100 p-6 rounded text-center hover:bg-gray-200"
-            >
-              <h3 className="font-bold text-lg">{cat}</h3>
-            </Link>
+      {/* Categories */}
+      <div ref={categoryReveal} className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
+        <h2 data-reveal className="font-display text-3xl font-bold mb-10">Shop by Category</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+          {categories.map(cat => (
+            <motion.div key={cat.slug} data-reveal whileHover={{ y: -4 }}>
+              <Link
+                to={`/shop?category=${cat.slug}`}
+                className="block bg-card ring-1 ring-white/10 hover:ring-gold/40 p-6 rounded-xl text-center transition-colors"
+              >
+                <h3 className="font-display font-semibold text-lg">{cat.name}</h3>
+              </Link>
+            </motion.div>
           ))}
         </div>
       </div>
 
       {/* Featured Products */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <h2 className="text-3xl font-bold mb-8">Featured Products</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div ref={productReveal} className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
+        <h2 data-reveal className="font-display text-3xl font-bold mb-10">Featured Products</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {products.map(product => (
-            <Link
-              key={product._id}
-              to={`/products/${product._id}`}
-              className="bg-white rounded shadow hover:shadow-lg transition"
-            >
-              <div className="bg-gray-200 h-48 rounded-t flex items-center justify-center">
-                <span className="text-gray-400">No Image</span>
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold truncate">{product.name}</h3>
-                <p className="text-gray-600 text-sm">{product.brand}</p>
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-lg font-bold">৳{product.price}</span>
-                  {product.discountPrice && (
-                    <span className="text-red-600 line-through text-sm">৳{product.discountPrice}</span>
-                  )}
-                </div>
-              </div>
-            </Link>
+            <ProductCard key={product._id} product={{ ...product, images: product.image ? [product.image] : [] }} />
           ))}
         </div>
       </div>

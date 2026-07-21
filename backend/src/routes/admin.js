@@ -119,8 +119,34 @@ router.put('/orders/:id/cancel', verifyToken, verifyAdmin, async (req, res) => {
   res.json({ success: true, message: 'Order cancelled', data: order });
 });
 
-// POST /admin/create-staff - Create admin/manager staff account (development/setup only)
-router.post('/create-staff', async (req, res) => {
+// GET /admin/staff - List all staff accounts (super admin only)
+router.get('/staff', verifyToken, verifySuperAdmin, async (req, res) => {
+  const staff = await AdminUser.find().sort({ createdAt: -1 });
+  res.json({ success: true, message: 'Staff retrieved', data: staff });
+});
+
+// PUT /admin/staff/:id/status - Activate or deactivate a staff account (super admin only)
+router.put('/staff/:id/status', verifyToken, verifySuperAdmin, async (req, res) => {
+  const { isActive } = req.body;
+
+  if (typeof isActive !== 'boolean') {
+    return res.status(400).json({ success: false, message: 'isActive (boolean) is required' });
+  }
+
+  if (req.params.id === req.user.userId) {
+    return res.status(400).json({ success: false, message: 'You cannot change your own account status' });
+  }
+
+  const staffMember = await AdminUser.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
+  if (!staffMember) {
+    return res.status(404).json({ success: false, message: 'Staff account not found' });
+  }
+
+  res.json({ success: true, message: 'Staff status updated', data: staffMember });
+});
+
+// POST /admin/create-staff - Create admin/manager staff account (super admin only)
+router.post('/create-staff', verifyToken, verifySuperAdmin, async (req, res) => {
   try {
     const { email, password, fullName, role } = req.body;
 

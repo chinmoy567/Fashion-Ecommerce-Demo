@@ -14,10 +14,10 @@ const sendOTPEmail = async (email, otp, name) => {
   const mailOptions = {
     from: process.env.EMAIL_FROM || process.env.SMTP_MAIL,
     to: email,
-    subject: 'Your OTP for FashionHub Registration',
+    subject: 'Your OTP for DeerFit Registration',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Welcome to FashionHub!</h2>
+        <h2>Welcome to DeerFit!</h2>
         <p>Hi ${name},</p>
         <p>Your One-Time Password (OTP) for email verification is:</p>
         <div style="background: #f0f0f0; padding: 20px; text-align: center; margin: 20px 0; border-radius: 5px;">
@@ -26,7 +26,7 @@ const sendOTPEmail = async (email, otp, name) => {
         <p>This OTP will expire in 10 minutes.</p>
         <p>If you didn't request this, please ignore this email.</p>
         <hr />
-        <p style="color: #666; font-size: 12px;">© 2026 FashionHub. All rights reserved.</p>
+        <p style="color: #666; font-size: 12px;">© 2026 DeerFit. All rights reserved.</p>
       </div>
     `,
   }
@@ -99,7 +99,7 @@ const sendOrderConfirmationEmail = async (email, order, customer) => {
 
         <p>If you have any questions, please contact our support team.</p>
         <hr />
-        <p style="color: #666; font-size: 12px;">© 2026 FashionHub. All rights reserved.</p>
+        <p style="color: #666; font-size: 12px;">© 2026 DeerFit. All rights reserved.</p>
       </div>
     `,
   }
@@ -132,7 +132,7 @@ const sendPaymentReceivedEmail = async (email, order, customer) => {
 
         <p>Thank you for your business!</p>
         <hr />
-        <p style="color: #666; font-size: 12px;">© 2026 FashionHub. All rights reserved.</p>
+        <p style="color: #666; font-size: 12px;">© 2026 DeerFit. All rights reserved.</p>
       </div>
     `,
   }
@@ -167,7 +167,7 @@ const sendShippingNotificationEmail = async (email, order, customer) => {
         <p>You can track your order status on our website using your order ID.</p>
         <p>Thank you for shopping with us!</p>
         <hr />
-        <p style="color: #666; font-size: 12px;">© 2026 FashionHub. All rights reserved.</p>
+        <p style="color: #666; font-size: 12px;">© 2026 DeerFit. All rights reserved.</p>
       </div>
     `,
   }
@@ -198,9 +198,9 @@ const sendDeliveryNotificationEmail = async (email, order, customer) => {
           <p style="margin: 10px 0 0 0; color: #666;">Please share your feedback by reviewing the products.</p>
         </div>
 
-        <p>Thank you for shopping with FashionHub. We hope to see you again soon!</p>
+        <p>Thank you for shopping with DeerFit. We hope to see you again soon!</p>
         <hr />
-        <p style="color: #666; font-size: 12px;">© 2026 FashionHub. All rights reserved.</p>
+        <p style="color: #666; font-size: 12px;">© 2026 DeerFit. All rights reserved.</p>
       </div>
     `,
   }
@@ -213,7 +213,7 @@ const sendPasswordResetOTPEmail = async (email, otp, name) => {
   const mailOptions = {
     from: process.env.EMAIL_FROM || process.env.SMTP_MAIL,
     to: email,
-    subject: 'Your Password Reset Code - FashionHub',
+    subject: 'Your Password Reset Code - DeerFit',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Password Reset Request</h2>
@@ -225,7 +225,7 @@ const sendPasswordResetOTPEmail = async (email, otp, name) => {
         <p>This code will expire in 10 minutes.</p>
         <p>If you didn't request this, please ignore this email.</p>
         <hr />
-        <p style="color: #666; font-size: 12px;">© 2026 FashionHub. All rights reserved.</p>
+        <p style="color: #666; font-size: 12px;">© 2026 DeerFit. All rights reserved.</p>
       </div>
     `,
   }
@@ -237,7 +237,7 @@ const sendPasswordResetEmail = async (email, resetLink, name) => {
   const mailOptions = {
     from: process.env.EMAIL_FROM || process.env.SMTP_MAIL,
     to: email,
-    subject: 'Password Reset Request - FashionHub',
+    subject: 'Password Reset Request - DeerFit',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Password Reset Request</h2>
@@ -253,7 +253,7 @@ const sendPasswordResetEmail = async (email, resetLink, name) => {
         <p>This link will expire in 1 hour.</p>
         <p>If you didn't request this, please ignore this email.</p>
         <hr />
-        <p style="color: #666; font-size: 12px;">© 2026 FashionHub. All rights reserved.</p>
+        <p style="color: #666; font-size: 12px;">© 2026 DeerFit. All rights reserved.</p>
       </div>
     `,
   }

@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import axios from 'axios'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Tag, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
@@ -57,51 +61,55 @@ export default function CouponSection({ subtotal, onCouponApply }) {
   }
 
   return (
-    <div className="p-4 bg-gray-50 rounded mb-4">
-      {!appliedCoupon ? (
-        <div className="space-y-3">
-          <h3 className="font-semibold text-lg">Have a coupon code?</h3>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-              onKeyPress={handleKeyPress}
-              placeholder="Enter coupon code"
-              className="flex-1 border px-4 py-2 rounded"
-            />
-            <button
-              onClick={handleApplyCoupon}
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              {loading ? 'Applying...' : 'Apply'}
-            </button>
-          </div>
-          {message && (
-            <p className={`text-sm ${message.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
-              {message}
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-semibold text-green-800">Coupon Applied: {appliedCoupon.code}</p>
-              <p className="text-sm text-green-700">
-                Discount: ৳{appliedCoupon.discountAmount.toFixed(2)}
-              </p>
+    <div className="p-4 bg-secondary/50 rounded-xl mb-4">
+      <AnimatePresence mode="wait">
+        {!appliedCoupon ? (
+          <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+            <h3 className="font-medium flex items-center gap-2"><Tag className="h-4 w-4 text-gold" /> Have a coupon code?</h3>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                onKeyPress={handleKeyPress}
+                placeholder="Enter coupon code"
+                className="flex-1"
+              />
+              <Button onClick={handleApplyCoupon} disabled={loading} className="bg-gold text-black hover:bg-gold-light">
+                {loading ? 'Applying...' : 'Apply'}
+              </Button>
             </div>
-            <button
-              onClick={handleRemoveCoupon}
-              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-            >
-              Remove
-            </button>
-          </div>
-        </div>
-      )}
+            {message && (
+              <p className={`text-sm ${message.includes('successfully') ? 'text-success' : 'text-destructive'}`}>
+                {message}
+              </p>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="applied"
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-2 p-3 bg-success/10 border border-success/30 rounded-lg"
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="font-medium text-success">Coupon Applied: {appliedCoupon.code}</p>
+                <p className="text-sm text-success/80">
+                  Discount: ৳{appliedCoupon.discountAmount.toFixed(2)}
+                </p>
+              </div>
+              <button
+                onClick={handleRemoveCoupon}
+                className="h-8 w-8 flex items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                aria-label="Remove coupon"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

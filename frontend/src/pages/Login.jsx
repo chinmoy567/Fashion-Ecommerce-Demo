@@ -1,8 +1,13 @@
 import { useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useNavigate, Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { loginCustomer } from '../api/auth'
 import { setUser, setToken } from '../store/slices/authSlice'
+import AuthCard from '../components/AuthCard'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function Login() {
   const dispatch = useDispatch()
@@ -27,57 +32,55 @@ export default function Login() {
   }
 
   return (
-    <div className="max-w-md mx-auto py-12">
-      <div className="bg-white p-8 rounded shadow">
-        <h1 className="text-2xl font-bold mb-6">Login</h1>
+    <AuthCard title="Welcome Back" subtitle="Login to continue to DeerFit">
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-destructive/10 text-destructive text-sm p-3 mb-4 rounded-lg"
+        >
+          {error}
+        </motion.div>
+      )}
 
-        {error && <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">{error}</div>}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label className="mb-2">Email</Label>
+          <Input
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block font-semibold mb-2">Email</label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full border px-4 py-2 rounded"
-            />
-          </div>
+        <div>
+          <Label className="mb-2">Password</Label>
+          <Input
+            type="password"
+            required
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          />
+        </div>
 
-          <div>
-            <label className="block font-semibold mb-2">Password</label>
-            <input
-              type="password"
-              required
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full border px-4 py-2 rounded"
-            />
-          </div>
-
-          <div className="text-right">
-            <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
-              Forgot password?
-            </Link>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-
-        <p className="mt-4 text-center">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-blue-600 hover:underline">
-            Register
+        <div className="text-right">
+          <Link to="/forgot-password" className="text-sm text-gold hover:text-gold-light transition-colors">
+            Forgot password?
           </Link>
-        </p>
-      </div>
-    </div>
+        </div>
+
+        <Button type="submit" disabled={loading} className="w-full bg-gold text-black hover:bg-gold-light h-11">
+          {loading ? 'Logging in...' : 'Login'}
+        </Button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Don't have an account?{' '}
+        <Link to="/register" className="text-gold hover:text-gold-light transition-colors">
+          Register
+        </Link>
+      </p>
+    </AuthCard>
   )
 }

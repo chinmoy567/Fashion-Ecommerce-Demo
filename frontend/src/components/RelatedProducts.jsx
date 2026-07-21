@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getRelatedProducts } from '../api/product'
+import { useScrollReveal } from '@/hooks/useScrollReveal'
 
 export default function RelatedProducts() {
   const { id } = useParams()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const revealRef = useScrollReveal()
 
   useEffect(() => {
     fetchRelated()
@@ -26,29 +28,30 @@ export default function RelatedProducts() {
   if (loading || products.length === 0) return null
 
   return (
-    <div className="mt-12 border-t pt-8">
-      <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
+    <div ref={revealRef} className="mt-16 border-t border-white/10 pt-10">
+      <h2 data-reveal className="font-display text-2xl font-bold mb-6">You May Also Like</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {products.map((product) => (
           <Link
             key={product._id}
+            data-reveal
             to={`/products/${product._id}`}
             className="group block"
           >
-            <div className="bg-gray-100 rounded-lg overflow-hidden aspect-square flex items-center justify-center mb-2">
+            <div className="bg-secondary rounded-xl overflow-hidden ring-1 ring-white/10 group-hover:ring-gold/40 aspect-square flex items-center justify-center mb-2 transition-colors">
               {product.image ? (
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"
                 />
               ) : (
-                <span className="text-gray-400 text-sm">No Image</span>
+                <span className="text-muted-foreground text-sm">No Image</span>
               )}
             </div>
-            <p className="font-semibold text-sm truncate">{product.name}</p>
-            <p className="text-blue-600 font-bold">৳{product.discountPrice || product.price}</p>
+            <p className="font-medium text-sm truncate">{product.name}</p>
+            <p className="text-gold font-semibold">৳{product.discountPrice || product.price}</p>
           </Link>
         ))}
       </div>

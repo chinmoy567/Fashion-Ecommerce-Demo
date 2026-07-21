@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import axios from 'axios'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Bell } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
@@ -70,50 +72,67 @@ export default function NotificationBell() {
 
   return (
     <div className="relative">
-      <button
+      <motion.button
         onClick={fetchNotifications}
-        className="relative p-2 text-gray-700 hover:text-blue-600"
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.94 }}
+        className="relative p-2 text-foreground/80 hover:text-gold transition-colors"
         title="Notifications"
       >
-        <span className="text-2xl">🔔</span>
-        {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </button>
-
-      {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
-          <div className="p-4 border-b">
-            <h3 className="font-bold text-lg">Notifications</h3>
-          </div>
-
-          {loading ? (
-            <div className="p-4 text-center text-gray-500">Loading...</div>
-          ) : notifications.length > 0 ? (
-            <div className="divide-y">
-              {notifications.map((notification) => (
-                <div
-                  key={notification._id}
-                  onClick={() => markAsRead(notification._id)}
-                  className={`p-3 hover:bg-gray-50 cursor-pointer ${
-                    !notification.isRead ? 'bg-blue-50' : ''
-                  }`}
-                >
-                  <p className="font-semibold text-sm capitalize">{notification.type?.replace(/_/g, ' ')}</p>
-                  <p className="text-gray-600 text-sm">{notification.message}</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(notification.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 text-center text-gray-500">No notifications</div>
+        <Bell className="h-5 w-5" />
+        <AnimatePresence>
+          {unreadCount > 0 && (
+            <motion.span
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-medium rounded-full h-4 w-4 flex items-center justify-center"
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </motion.span>
           )}
-        </div>
-      )}
+        </AnimatePresence>
+      </motion.button>
+
+      <AnimatePresence>
+        {showDropdown && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 mt-3 w-80 glass rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto"
+          >
+            <div className="p-4 border-b border-white/10">
+              <h3 className="font-display font-semibold text-base">Notifications</h3>
+            </div>
+
+            {loading ? (
+              <div className="p-4 text-center text-muted-foreground text-sm">Loading...</div>
+            ) : notifications.length > 0 ? (
+              <div className="divide-y divide-white/5">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification._id}
+                    onClick={() => markAsRead(notification._id)}
+                    className={`p-3 hover:bg-white/5 cursor-pointer transition-colors ${
+                      !notification.isRead ? 'bg-gold/5' : ''
+                    }`}
+                  >
+                    <p className="font-medium text-sm capitalize">{notification.type?.replace(/_/g, ' ')}</p>
+                    <p className="text-muted-foreground text-sm">{notification.message}</p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      {new Date(notification.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 text-center text-muted-foreground text-sm">No notifications</div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

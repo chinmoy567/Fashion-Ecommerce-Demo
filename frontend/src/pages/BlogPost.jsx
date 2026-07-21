@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import axios from 'axios'
+import { motion } from 'framer-motion'
+import { ArrowLeft } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
@@ -32,14 +34,14 @@ export default function BlogPost() {
   }
 
   if (loading) {
-    return <div className="max-w-3xl mx-auto px-4 py-12 text-center text-gray-500">Loading...</div>
+    return <div className="max-w-3xl mx-auto px-4 py-24 text-center text-muted-foreground">Loading...</div>
   }
 
   if (notFound || !post) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold mb-4">Post not found</h1>
-        <Link to="/blog" className="text-blue-600 hover:underline">
+      <div className="max-w-3xl mx-auto px-4 py-24 text-center">
+        <h1 className="font-display text-2xl font-bold mb-4">Post not found</h1>
+        <Link to="/blog" className="text-gold hover:text-gold-light transition-colors">
           Back to Blog
         </Link>
       </div>
@@ -47,20 +49,25 @@ export default function BlogPost() {
   }
 
   return (
-    <article className="max-w-3xl mx-auto px-4 py-12">
-      <Link to="/blog" className="text-sm text-blue-600 hover:underline">
-        ← Back to Blog
+    <motion.article
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="max-w-3xl mx-auto px-4 sm:px-6 py-12"
+    >
+      <Link to="/blog" className="text-sm text-gold hover:text-gold-light transition-colors flex items-center gap-1.5 w-fit">
+        <ArrowLeft className="h-3.5 w-3.5" /> Back to Blog
       </Link>
 
       {post.category && (
-        <span className="block text-xs font-semibold text-blue-600 uppercase mt-6">
+        <span className="block text-xs font-semibold text-gold uppercase mt-6 tracking-wide">
           {post.category}
         </span>
       )}
 
-      <h1 className="text-4xl font-bold mt-2 mb-4">{post.title}</h1>
+      <h1 className="font-display text-4xl font-bold mt-2 mb-4 text-balance">{post.title}</h1>
 
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : ''}
         {post.author?.fullName ? ` · ${post.author.fullName}` : ''}
       </p>
@@ -69,24 +76,24 @@ export default function BlogPost() {
         <img
           src={post.featuredImage}
           alt={post.title}
-          className="w-full rounded-lg mb-8 max-h-96 object-cover"
+          className="w-full rounded-xl mb-8 max-h-96 object-cover ring-1 ring-white/10"
         />
       )}
 
       <div
-        className="max-w-none text-gray-800 leading-relaxed space-y-4 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-8 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mt-6 [&_a]:text-blue-600 [&_a]:underline [&_img]:rounded-lg"
+        className="max-w-none text-foreground/90 leading-relaxed space-y-4 [&_h2]:font-display [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-8 [&_h3]:font-display [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mt-6 [&_a]:text-gold [&_a]:underline [&_img]:rounded-xl"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
 
       {post.tags?.length > 0 && (
         <div className="mt-8 flex flex-wrap gap-2">
           {post.tags.map((tag) => (
-            <span key={tag} className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full">
+            <span key={tag} className="bg-secondary text-secondary-foreground text-xs px-3 py-1 rounded-full">
               {tag}
             </span>
           ))}
         </div>
       )}
-    </article>
+    </motion.article>
   )
 }

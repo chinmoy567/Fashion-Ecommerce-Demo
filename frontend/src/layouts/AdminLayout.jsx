@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { logout } from '../store/slices/authSlice'
@@ -6,12 +7,14 @@ export default function AdminLayout() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useSelector(state => state.auth)
+  const isStaff = isAuthenticated && (user?.role === 'manager' || user?.role === 'super_admin')
 
-  // Redirect if not admin/manager
-  if (!isAuthenticated || (user?.role !== 'manager' && user?.role !== 'super_admin')) {
-    navigate('/login')
-    return null
-  }
+  // Redirect if not admin/manager (navigation must happen in an effect, not during render)
+  useEffect(() => {
+    if (!isStaff) navigate('/staff-login')
+  }, [isStaff])
+
+  if (!isStaff) return null
 
   const handleLogout = () => {
     dispatch(logout())
@@ -60,14 +63,15 @@ export default function AdminLayout() {
               >
                 📦 Products
               </Link>
-              <Link
-                to="/admin/customers"
-                className="block px-4 py-2 rounded hover:bg-gray-700 transition"
-              >
-                👥 Customers
-              </Link>
             </>
           )}
+
+          <Link
+            to="/admin/customers"
+            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
+          >
+            👥 Customers
+          </Link>
 
           <Link
             to="/admin/inventory"
@@ -96,6 +100,12 @@ export default function AdminLayout() {
                 className="block px-4 py-2 rounded hover:bg-gray-700 transition"
               >
                 📝 Blog
+              </Link>
+              <Link
+                to="/admin/staff"
+                className="block px-4 py-2 rounded hover:bg-gray-700 transition"
+              >
+                🛡️ Staff Management
               </Link>
             </>
           )}

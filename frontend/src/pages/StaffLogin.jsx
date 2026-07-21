@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useNavigate, Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { loginStaff } from '../api/auth'
 import { setUser, setToken } from '../store/slices/authSlice'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function StaffLogin() {
   const dispatch = useDispatch()
@@ -33,65 +37,64 @@ export default function StaffLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+    <div className="min-h-screen bg-gold-glow bg-background flex items-center justify-center py-12 px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-md w-full bg-card ring-1 ring-white/10 rounded-2xl p-8"
+      >
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Staff Portal</h1>
-          <p className="text-gray-600 mt-2">Admin & Manager Login</p>
+          <p className="text-gold text-xs tracking-[0.3em] uppercase mb-2">Internal Access</p>
+          <h1 className="font-display text-3xl font-bold">Staff Portal</h1>
+          <p className="text-muted-foreground mt-2">Admin &amp; Manager Login</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+          <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-            <input
+            <Label className="mb-2">Email</Label>
+            <Input
               type="email"
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="staff@example.com"
-              className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-            <input
+            <Label className="mb-2">Password</Label>
+            <Input
               type="password"
               required
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               placeholder="••••••••"
-              className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
-          >
+          <Button type="submit" disabled={loading} className="w-full bg-gold text-black hover:bg-gold-light h-11">
             {loading ? 'Signing in...' : 'Sign In'}
-          </button>
+          </Button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-center text-gray-600 text-sm mb-4">
+        <div className="mt-8 pt-6 border-t border-white/10">
+          <p className="text-center text-muted-foreground text-sm mb-4">
             Customer?{' '}
-            <Link to="/login" className="text-blue-600 hover:underline font-semibold">
+            <Link to="/login" className="text-gold hover:text-gold-light font-medium transition-colors">
               Customer Login
             </Link>
           </p>
-          <Link to="/" className="block text-center text-gray-600 hover:text-gray-900 text-sm">
+          <Link to="/" className="block text-center text-muted-foreground hover:text-foreground text-sm transition-colors">
             Back to Home
           </Link>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
