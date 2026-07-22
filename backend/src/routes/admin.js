@@ -202,8 +202,8 @@ router.post('/create-staff', verifyToken, verifySuperAdmin, async (req, res) => 
   }
 });
 
-// GET /admin/seed-stats - Check data available for seeding
-router.get('/seed-stats', async (req, res) => {
+// GET /admin/seed-stats - Check data available for seeding (admin only)
+router.get('/seed-stats', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const productCount = await Product.countDocuments({ status: 'active' });
     const customerCount = await Customer.countDocuments();
@@ -225,8 +225,8 @@ router.get('/seed-stats', async (req, res) => {
   }
 });
 
-// POST /admin/seed-orders - Create test orders for dashboard (development only)
-router.post('/seed-orders', async (req, res) => {
+// POST /admin/seed-orders - Create test orders for dashboard (admin only, development only)
+router.post('/seed-orders', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { count = 50 } = req.body;
 
