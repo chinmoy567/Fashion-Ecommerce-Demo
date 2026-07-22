@@ -76,7 +76,7 @@ router.post('/verify-email', async (req, res) => {
   res.json({
     success: true,
     message: 'Email verified successfully',
-    data: { verified: true, token, refreshToken },
+    data: { verified: true, token, refreshToken, customer: customer.toJSON() },
   });
 });
 

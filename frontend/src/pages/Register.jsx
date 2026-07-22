@@ -1,13 +1,16 @@
 import { useState } from 'react'
+import { useDispatch } from 'react-redux'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { registerCustomer, verifyEmail } from '../api/auth'
+import { setUser, setToken } from '../store/slices/authSlice'
 import AuthCard from '../components/AuthCard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 export default function Register() {
+  const dispatch = useDispatch()
   const navigate = useNavigate()
   const [step, setStep] = useState('register') // 'register' or 'verify'
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '' })
@@ -33,7 +36,8 @@ export default function Register() {
     setLoading(true)
     try {
       const response = await verifyEmail({ email: formData.email, otp })
-      localStorage.setItem('token', response.data.data.token)
+      dispatch(setToken(response.data.data.token))
+      dispatch(setUser(response.data.data.customer))
       navigate('/')
     } catch (err) {
       setError(err.response?.data?.message || 'Verification failed')
