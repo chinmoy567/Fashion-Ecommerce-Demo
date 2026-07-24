@@ -24,7 +24,6 @@ const customerSchema = new mongoose.Schema(
 );
 
 // Indexes for performance
-customerSchema.index({ email: 1 });
 customerSchema.index({ createdAt: 1 });
 customerSchema.index({ isActive: 1, createdAt: -1 });
 

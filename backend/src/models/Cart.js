@@ -19,6 +19,6 @@ const cartSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-cartSchema.index({ customerId: 1 });
+// Note: customerId is indexed via `unique: true` on the field above.
 
 export default mongoose.model('Cart', cartSchema);

@@ -6,7 +6,7 @@ import StatCard from '../../components/charts/StatCard'
 import RevenueTrendChart from '../../components/charts/RevenueTrendChart'
 import OrderStatusChart from '../../components/charts/OrderStatusChart'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 export default function ManagerDashboard() {
   const navigate = useNavigate()

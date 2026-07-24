@@ -17,7 +17,7 @@ validateEnv();
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 console.log('✅ DNS Override: Using Google Public DNS (8.8.8.8, 8.8.4.4)\n');
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Initialize services
 const initializeServices = async () => {

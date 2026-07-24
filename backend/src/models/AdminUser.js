@@ -48,7 +48,6 @@ adminUserSchema.methods.toJSON = function () {
   return obj;
 };
 
-adminUserSchema.index({ email: 1 });
 adminUserSchema.index({ role: 1 });
 
 export default mongoose.model('AdminUser', adminUserSchema);

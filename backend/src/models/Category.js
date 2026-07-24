@@ -12,7 +12,6 @@ const categorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-categorySchema.index({ name: 1 });
 categorySchema.index({ parentId: 1 });
 
 export default mongoose.model('Category', categorySchema);

@@ -1,7 +1,7 @@
 // Frees the backend dev port by killing any process already listening on it.
 import { execSync } from 'child_process';
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 function freePortWindows(port) {
   try {

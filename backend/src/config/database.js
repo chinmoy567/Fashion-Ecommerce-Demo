@@ -50,8 +50,8 @@ const createIndexes = async () => {
     await db.collection('orders').createIndex({ customerId: 1, createdAt: -1 });
     await db.collection('orders').createIndex({ status: 1, createdAt: -1 });
 
-    // Cart indexes
-    await db.collection('carts').createIndex({ customerId: 1 });
+    // Cart indexes - unique because each customer has exactly one cart
+    await db.collection('carts').createIndex({ customerId: 1 }, { unique: true });
 
     // Payment indexes
     await db.collection('payments').createIndex({ orderId: 1 });

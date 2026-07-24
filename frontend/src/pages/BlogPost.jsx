@@ -4,7 +4,7 @@ import axios from 'axios'
 import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 export default function BlogPost() {
   const { slug } = useParams()

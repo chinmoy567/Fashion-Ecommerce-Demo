@@ -31,7 +31,6 @@ const productSchema = new mongoose.Schema(
 );
 
 // Indexes for search and filtering
-productSchema.index({ sku: 1 });
 productSchema.index({ categoryId: 1 });
 productSchema.index({ brandId: 1 });
 productSchema.index({ status: 1 });

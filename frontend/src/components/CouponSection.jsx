@@ -5,7 +5,7 @@ import { Tag, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 export default function CouponSection({ subtotal, onCouponApply }) {
   const [couponCode, setCouponCode] = useState('')
