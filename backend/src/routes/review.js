@@ -1,9 +1,36 @@
 import express from 'express';
 import Review from '../models/Review.js';
 import Product from '../models/Product.js';
-import { verifyToken } from '../middlewares/auth.js';
+import { verifyToken, verifyAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
+
+// GET /reviews - Get all reviews with pagination (admin only)
+router.get('/', verifyToken, verifyAdmin, async (req, res) => {
+  const { status, page = 1, limit = 10 } = req.query;
+
+  const query = {};
+  if (status) query.status = status;
+
+  const skip = (page - 1) * limit;
+  const reviews = await Review.find(query)
+    .populate('customerId', 'name email')
+    .populate('productId', 'name')
+    .skip(skip)
+    .limit(parseInt(limit))
+    .sort({ createdAt: -1 });
+
+  const total = await Review.countDocuments(query);
+
+  res.json({
+    success: true,
+    message: 'Reviews retrieved',
+    data: {
+      items: reviews,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) },
+    },
+  });
+});
 
 // POST /reviews - Create a review for a product
 router.post('/', verifyToken, async (req, res) => {

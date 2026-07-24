@@ -1,6 +1,55 @@
 import request from 'supertest';
 import app from '../app.js';
-import { createCustomer, createProduct } from './helpers.js';
+import { createAdmin, createCustomer, createProduct } from './helpers.js';
+
+describe('GET /api/reviews', () => {
+  it('returns paginated reviews with customer and product populated for an admin', async () => {
+    const { token: customerToken } = await createCustomer();
+    const product = await createProduct();
+    await request(app)
+      .post('/api/reviews')
+      .set('Authorization', `Bearer ${customerToken}`)
+      .send({ productId: product._id, rating: 4, comment: 'Nice' });
+
+    const { token } = await createAdmin();
+    const res = await request(app)
+      .get('/api/reviews')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.items).toHaveLength(1);
+    expect(res.body.data.items[0].customerId.name).toBeDefined();
+    expect(res.body.data.items[0].productId.name).toBeDefined();
+    expect(res.body.data.pagination.pages).toBe(1);
+  });
+
+  it('filters reviews by status', async () => {
+    const { token: customerToken } = await createCustomer();
+    const product = await createProduct();
+    await request(app)
+      .post('/api/reviews')
+      .set('Authorization', `Bearer ${customerToken}`)
+      .send({ productId: product._id, rating: 4, comment: 'Nice' });
+
+    const { token } = await createAdmin();
+    const approved = await request(app)
+      .get('/api/reviews?status=approved')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(approved.status).toBe(200);
+    expect(approved.body.data.items).toHaveLength(0);
+  });
+
+  it('rejects non-admin requests', async () => {
+    const { token } = await createCustomer();
+
+    const res = await request(app)
+      .get('/api/reviews')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(403);
+  });
+});
 
 describe('POST /api/reviews', () => {
   it('creates a review for the authenticated customer', async () => {

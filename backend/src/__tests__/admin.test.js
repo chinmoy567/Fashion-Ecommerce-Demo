@@ -183,11 +183,20 @@ describe('PUT /api/admin/orders/:id/confirm and /cancel', () => {
 
 describe('GET /api/admin/seed-stats', () => {
   it('returns counts of products, customers and orders', async () => {
+    const { token } = await createAdmin();
     await createProduct();
 
-    const res = await request(app).get('/api/admin/seed-stats');
+    const res = await request(app)
+      .get('/api/admin/seed-stats')
+      .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data.products).toBe(1);
+  });
+
+  it('rejects unauthenticated requests', async () => {
+    const res = await request(app).get('/api/admin/seed-stats');
+
+    expect(res.status).toBe(401);
   });
 });
